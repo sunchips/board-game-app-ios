@@ -48,13 +48,17 @@ BoardGameApp/
    ```
    - `SERVER_BASE_URL` defaults to `http://localhost:8080` (works in the simulator, reaches the Mac's localhost).
    - For a physical iOS device on the same LAN, set `SERVER_BASE_URL` to `http://<Mac-LAN-IP>:8080`.
-   - `API_KEY` must match the server's `BOARD_GAME_API_KEY`.
 3. Generate the Xcode project:
    ```bash
    xcodegen generate
    ```
-4. Start the server (see `../board-game-server/README.md`).
-5. Open `BoardGameApp.xcodeproj` and ⌘R on any iOS 26 simulator.
+4. In Xcode, select the `BoardGameApp` target → **Signing & Capabilities** → set your development team and confirm **Sign in with Apple** is listed. Sign in with Apple works in the simulator too, but requires the capability to be enabled against a real team.
+5. Start the server (see `../board-game-server/README.md`).
+6. Open `BoardGameApp.xcodeproj` and ⌘R on any iOS 26 simulator. On first launch you'll be shown a Sign in with Apple screen; after that the JWT is persisted in Keychain and subsequent launches skip straight to the tabs.
+
+## Authentication
+
+The app uses **Sign in with Apple**. On success, the identity token is POSTed to `/api/auth/apple`, which returns a server JWT that gets stored in Keychain (`AuthStore` + `KeychainStore`). Every subsequent request sends it as `Authorization: Bearer <token>`. Signing out (Players tab → avatar menu → Sign Out) clears the Keychain entry and drops back to the login screen.
 
 ## Running tests
 

@@ -42,7 +42,8 @@ targets:
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         ServerBaseURL: $(SERVER_BASE_URL)
-        ApiKey: $(API_KEY)
+    entitlements:
+      path: BoardGameApp/BoardGameApp.entitlements
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.sanchitb.boardgame.app
@@ -52,6 +53,7 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ENABLE_USER_SCRIPT_SANDBOXING: YES
         GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: BoardGameApp/BoardGameApp.entitlements
 
   BoardGameAppTests:
     type: bundle.unit-test
