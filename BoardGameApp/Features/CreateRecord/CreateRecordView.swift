@@ -4,6 +4,7 @@ struct CreateRecordView: View {
     @State private var model: CreateRecordViewModel
     @State private var showingRoster = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(UserDataStore.self) private var userData
 
     init(game: GameDefinition) {
         _model = State(initialValue: CreateRecordViewModel(game: game))
@@ -84,7 +85,10 @@ struct CreateRecordView: View {
             }
         }
         .onChange(of: model.didSubmit) { _, record in
-            if record != nil { dismiss() }
+            if let record {
+                userData.prependRecord(record)
+                dismiss()
+            }
         }
         .sheet(isPresented: $showingRoster) {
             RosterPickerSheet { picked in
@@ -96,4 +100,5 @@ struct CreateRecordView: View {
 
 #Preview {
     NavigationStack { CreateRecordView(game: GameCatalog.catan) }
+        .environment(UserDataStore())
 }

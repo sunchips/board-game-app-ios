@@ -1,32 +1,29 @@
 import SwiftUI
 
-/// Multi-select sheet that loads the saved-player roster from the server and
-/// hands selected rows back to the create-record flow so the user doesn't have
-/// to retype frequent players.
+/// Multi-select sheet backed by the shared `UserDataStore` — no separate fetch
+/// because the roster was prefetched at sign-in. If the store is somehow
+/// empty (edge cases like a background refresh failure) we surface a refresh
+/// affordance rather than silently showing an empty list.
 struct RosterPickerSheet: View {
     var onPick: @MainActor ([SavedPlayer]) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var players: [SavedPlayer] = []
+    @Environment(UserDataStore.self) private var userData
     @State private var selected: Set<UUID> = []
-    @State private var isLoading: Bool = false
-    @State private var errorMessage: String?
 
     var body: some View {
         NavigationStack {
             Group {
-                if isLoading && players.isEmpty {
+                if userData.isHydrating && userData.players.isEmpty {
                     ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let message = errorMessage, players.isEmpty {
-                    ContentUnavailableView("Couldn't load players", systemImage: "wifi.exclamationmark", description: Text(message))
-                } else if players.isEmpty {
+                } else if userData.players.isEmpty {
                     ContentUnavailableView(
                         "No saved players",
                         systemImage: "person.2",
                         description: Text("Add players from the Players tab to pick them quickly here."),
                     )
                 } else {
-                    List(players, selection: $selected) { player in
+                    List(userData.players, selection: $selected) { player in
                         VStack(alignment: .leading) {
                             Text(player.name).font(.headline)
                             if let email = player.email {
@@ -43,7 +40,7 @@ struct RosterPickerSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add \(selected.count > 0 ? "(\(selected.count))" : "")") {
-                        let picked = players.filter { selected.contains($0.id) }
+                        let picked = userData.players.filter { selected.contains($0.id) }
                         onPick(picked)
                         dismiss()
                     }
@@ -53,20 +50,7 @@ struct RosterPickerSheet: View {
                     Button("Cancel") { dismiss() }
                 }
             }
-            .task { await load() }
-        }
-    }
-
-    private func load() async {
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
-        do {
-            players = try await APIClient.shared.listSavedPlayers()
-        } catch let apiError as APIError {
-            errorMessage = apiError.errorDescription
-        } catch {
-            errorMessage = error.localizedDescription
+            .refreshable { await userData.refreshPlayers() }
         }
     }
 }

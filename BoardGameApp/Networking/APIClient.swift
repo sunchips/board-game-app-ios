@@ -41,6 +41,12 @@ actor APIClient {
         return try await send(request: request)
     }
 
+    /// One-shot hydration after authenticating — returns the user plus their
+    /// full player roster and all records in a single authenticated call.
+    func fetchSessionBundle() async throws -> SessionBundle {
+        try await send(request: buildRequest(path: "/api/session"))
+    }
+
     // MARK: - Games / records
 
     func listGames() async throws -> [GameSummary] {

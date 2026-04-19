@@ -2,21 +2,22 @@ import SwiftUI
 
 struct PlayersView: View {
     @Environment(AuthStore.self) private var auth
-    @State private var model = PlayersViewModel()
+    @Environment(UserDataStore.self) private var userData
     @State private var showingAdd = false
     @State private var editing: SavedPlayer?
+    @State private var mutationError: String?
 
     var body: some View {
         Group {
-            if model.isLoading && model.players.isEmpty {
+            if userData.isHydrating && userData.players.isEmpty {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let message = model.errorMessage, model.players.isEmpty {
+            } else if let message = userData.errorMessage, userData.players.isEmpty {
                 ContentUnavailableView(
                     "Couldn't load players",
                     systemImage: "person.crop.circle.badge.exclamationmark",
                     description: Text(message),
                 )
-            } else if model.players.isEmpty {
+            } else if userData.players.isEmpty {
                 ContentUnavailableView(
                     "No players yet",
                     systemImage: "person.2.badge.plus",
@@ -34,16 +35,16 @@ struct PlayersView: View {
                 }
             } else {
                 List {
-                    ForEach(model.players) { player in
+                    ForEach(userData.players) { player in
                         Button { editing = player } label: {
                             PlayerRow(player: player)
                         }
                         .buttonStyle(.plain)
                     }
                     .onDelete { offsets in
-                        let victims = offsets.map { model.players[$0] }
+                        let victims = offsets.map { userData.players[$0] }
                         Task {
-                            for p in victims { await model.delete(p) }
+                            for p in victims { await delete(p) }
                         }
                     }
                 }
@@ -56,6 +57,9 @@ struct PlayersView: View {
             }
             ToolbarItem(placement: .topBarLeading) {
                 Menu {
+                    if let name = auth.session?.user.displayName, !name.isEmpty {
+                        Text(name)
+                    }
                     if let email = auth.session?.user.email {
                         Text(email)
                     }
@@ -67,16 +71,49 @@ struct PlayersView: View {
         }
         .sheet(isPresented: $showingAdd) {
             PlayerEditSheet(title: "New Player") { name, email, notes in
-                try await model.create(name: name, email: email, notes: notes)
+                try await create(name: name, email: email, notes: notes)
             }
         }
         .sheet(item: $editing) { player in
             PlayerEditSheet(title: "Edit Player", initial: player) { name, email, notes in
-                try await model.update(id: player.id, name: name, email: email, notes: notes)
+                try await update(id: player.id, name: name, email: email, notes: notes)
             }
         }
-        .refreshable { await model.load() }
-        .task { await model.load() }
+        .refreshable { await userData.refreshPlayers() }
+    }
+
+    @MainActor
+    private func create(name: String, email: String?, notes: String?) async throws {
+        let draft = SavedPlayerDraft(
+            name: name.trimmingCharacters(in: .whitespaces),
+            email: email?.trimmingCharacters(in: .whitespaces).nilIfEmpty,
+            notes: notes?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
+        )
+        let created = try await APIClient.shared.createSavedPlayer(draft)
+        userData.upsert(player: created)
+    }
+
+    @MainActor
+    private func update(id: UUID, name: String, email: String?, notes: String?) async throws {
+        let draft = SavedPlayerDraft(
+            name: name.trimmingCharacters(in: .whitespaces),
+            email: email?.trimmingCharacters(in: .whitespaces).nilIfEmpty,
+            notes: notes?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
+        )
+        let updated = try await APIClient.shared.updateSavedPlayer(id: id, body: draft)
+        userData.upsert(player: updated)
+    }
+
+    @MainActor
+    private func delete(_ player: SavedPlayer) async {
+        do {
+            try await APIClient.shared.deleteSavedPlayer(id: player.id)
+            userData.remove(playerID: player.id)
+        } catch let apiError as APIError {
+            mutationError = apiError.errorDescription
+        } catch {
+            mutationError = error.localizedDescription
+        }
     }
 }
 
@@ -169,4 +206,8 @@ struct PlayerEditSheet: View {
             errorMessage = error.localizedDescription
         }
     }
+}
+
+private extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }

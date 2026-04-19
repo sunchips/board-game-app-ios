@@ -5,18 +5,31 @@ import Observation
 /// Single source of truth for the signed-in session. Views observe this to
 /// decide whether to show the login gate. `restore()` reads Keychain on
 /// launch so returning users skip straight to the home screen.
+///
+/// Owns a reference to [UserDataStore] so it can prefetch the authenticated
+/// bundle (players + records) the moment a session lands — either from a fresh
+/// Apple sign-in or a Keychain restore — without the views having to coordinate.
 @MainActor
 @Observable
 final class AuthStore {
     private(set) var session: AuthSession?
     private(set) var errorMessage: String?
     private(set) var isAuthenticating: Bool = false
+    /// True for the duration of a first-sign-in account creation. Views can
+    /// show a welcome/onboarding affordance on the next screen if they want.
+    private(set) var wasNewUser: Bool = false
+
+    let userData: UserDataStore
 
     private static let sessionKey = "session"
 
-    init() {
+    init(userData: UserDataStore = UserDataStore()) {
+        self.userData = userData
         restore()
         observeExpiryNotifications()
+        if session != nil {
+            Task { await userData.attach(session: session) }
+        }
     }
 
     private func observeExpiryNotifications() {
@@ -61,6 +74,8 @@ final class AuthStore {
     func signOut() {
         KeychainStore.delete(Self.sessionKey)
         session = nil
+        wasNewUser = false
+        Task { await userData.attach(session: nil) }
     }
 
     private func exchangeToken(identityToken: String, fullName: String?) async {
@@ -77,7 +92,9 @@ final class AuthStore {
                 user: response.user,
             )
             try persist(newSession)
+            wasNewUser = response.isNewUser
             session = newSession
+            await userData.attach(session: newSession)
         } catch let apiError as APIError {
             errorMessage = apiError.errorDescription ?? "Sign-in failed"
         } catch {

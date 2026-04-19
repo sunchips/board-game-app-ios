@@ -8,6 +8,7 @@ struct BoardGameAppApp: App {
         WindowGroup {
             RootView()
                 .environment(auth)
+                .environment(auth.userData)
         }
     }
 }
@@ -41,5 +42,8 @@ private struct SignedInTabs: View {
 }
 
 #Preview {
-    RootView().environment(AuthStore())
+    let auth = AuthStore()
+    return RootView()
+        .environment(auth)
+        .environment(auth.userData)
 }
