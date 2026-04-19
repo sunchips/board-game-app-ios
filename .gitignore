@@ -1,0 +1,16 @@
+## macOS
+.DS_Store
+
+## Build / derived data
+build/
+DerivedData/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+## xcodegen output — regenerate with `xcodegen generate`
+BoardGameApp.xcodeproj/
+
+## Secrets
+Config/Secrets.xcconfig
+!Config/Secrets.xcconfig.example
