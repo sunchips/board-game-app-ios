@@ -137,6 +137,11 @@ actor APIClient {
         }
         guard let http = response as? HTTPURLResponse else { throw APIError.transport }
         guard (200..<300).contains(http.statusCode) else {
+            if http.statusCode == 401, request.value(forHTTPHeaderField: "Authorization") != nil {
+                // Server rejected our session token — burn it so the UI falls
+                // back to the login screen on the next observation.
+                await MainActor.run { NotificationCenter.default.post(name: .apiSessionExpired, object: nil) }
+            }
             if let apiError = try? decoder.decode(APIError.self, from: data) {
                 throw apiError
             }

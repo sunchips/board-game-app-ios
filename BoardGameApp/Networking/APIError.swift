@@ -1,5 +1,11 @@
 import Foundation
 
+extension Notification.Name {
+    /// Posted from the API layer when the server returns 401 on an authorised
+    /// request — `AuthStore` observes this and clears the Keychain session.
+    static let apiSessionExpired = Notification.Name("boardgame.api.sessionExpired")
+}
+
 struct APIError: LocalizedError, Decodable, Sendable {
     let status: Int
     let error: String

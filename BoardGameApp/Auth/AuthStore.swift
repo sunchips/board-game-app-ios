@@ -16,6 +16,17 @@ final class AuthStore {
 
     init() {
         restore()
+        observeExpiryNotifications()
+    }
+
+    private func observeExpiryNotifications() {
+        NotificationCenter.default.addObserver(
+            forName: .apiSessionExpired,
+            object: nil,
+            queue: .main,
+        ) { [weak self] _ in
+            Task { @MainActor in self?.signOut() }
+        }
     }
 
     var isSignedIn: Bool { session != nil && session?.isExpired == false }
