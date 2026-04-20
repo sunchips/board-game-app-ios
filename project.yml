@@ -1,6 +1,6 @@
 name: BoardGameApp
 options:
-  bundleIdPrefix: com.sanchitb.boardgame
+  bundleIdPrefix: com.sanchitb.boardgamerecorder
   deploymentTarget:
     iOS: "26.0"
   createIntermediateGroups: true
@@ -45,7 +45,7 @@ targets:
         ApiKey: $(API_KEY)
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.sanchitb.boardgame.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.sanchitb.boardgamerecorder
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
@@ -62,5 +62,5 @@ targets:
       - target: BoardGameApp
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.sanchitb.boardgame.app.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.sanchitb.boardgamerecorder.tests
         GENERATE_INFOPLIST_FILE: YES
