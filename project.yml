@@ -44,6 +44,9 @@ targets:
         ServerBaseURL: $(SERVER_BASE_URL)
     entitlements:
       path: BoardGameApp/BoardGameApp.entitlements
+      properties:
+        com.apple.developer.applesignin:
+          - Default
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.sanchitb.boardgamerecorder
