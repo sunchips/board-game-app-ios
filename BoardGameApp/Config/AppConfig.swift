@@ -9,9 +9,4 @@ enum AppConfig {
         }
         return url
     }()
-
-    static let apiKey: String = {
-        let value = Bundle.main.object(forInfoDictionaryKey: "ApiKey") as? String ?? "dev-key"
-        return value.trimmingCharacters(in: .whitespaces)
-    }()
 }

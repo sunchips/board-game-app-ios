@@ -32,6 +32,10 @@ final class CreateRecordViewModel {
         players.append(.blank(for: game))
     }
 
+    func addPlayers(from saved: [SavedPlayer]) {
+        players.append(contentsOf: saved.map { PlayerEntry.from(saved: $0, game: game) })
+    }
+
     func removePlayer(at offsets: IndexSet) {
         players.remove(atOffsets: offsets)
         winnerIndexes = Set(winnerIndexes.compactMap { idx -> Int? in
@@ -96,6 +100,13 @@ struct PlayerEntry: Identifiable, Hashable {
             }
         }
         return PlayerEntry(integers: integers, booleans: booleans)
+    }
+
+    static func from(saved: SavedPlayer, game: GameDefinition) -> PlayerEntry {
+        var entry = PlayerEntry.blank(for: game)
+        entry.name = saved.name
+        entry.email = saved.email ?? ""
+        return entry
     }
 
     func toDraft(game: GameDefinition) -> PlayerDraft {

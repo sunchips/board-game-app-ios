@@ -2,7 +2,9 @@ import SwiftUI
 
 struct CreateRecordView: View {
     @State private var model: CreateRecordViewModel
+    @State private var showingRoster = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(UserDataStore.self) private var userData
 
     init(game: GameDefinition) {
         _model = State(initialValue: CreateRecordViewModel(game: game))
@@ -24,9 +26,15 @@ struct CreateRecordView: View {
                 .onDelete { model.removePlayer(at: $0) }
 
                 Button {
+                    showingRoster = true
+                } label: {
+                    Label("Pick from Roster", systemImage: "person.2.circle.fill")
+                }
+
+                Button {
                     model.addPlayer()
                 } label: {
-                    Label("Add Player", systemImage: "plus.circle.fill")
+                    Label("Add Player Manually", systemImage: "plus.circle.fill")
                 }
             }
 
@@ -77,11 +85,20 @@ struct CreateRecordView: View {
             }
         }
         .onChange(of: model.didSubmit) { _, record in
-            if record != nil { dismiss() }
+            if let record {
+                userData.prependRecord(record)
+                dismiss()
+            }
+        }
+        .sheet(isPresented: $showingRoster) {
+            RosterPickerSheet { picked in
+                model.addPlayers(from: picked)
+            }
         }
     }
 }
 
 #Preview {
     NavigationStack { CreateRecordView(game: GameCatalog.catan) }
+        .environment(UserDataStore())
 }
