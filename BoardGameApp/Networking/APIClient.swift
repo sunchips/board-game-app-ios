@@ -25,21 +25,35 @@ actor APIClient {
     }
 
     func listGames() async throws -> [GameSummary] {
-        try await send(request: buildRequest(path: "/api/games"))
+        let token = await MainActor.run { AuthService.shared.sessionToken() }
+        return try await send(request: buildRequest(path: "/api/games", sessionToken: token))
     }
 
     func listRecords(game: String? = nil, limit: Int = 100) async throws -> [GameRecord] {
         var items: [URLQueryItem] = [.init(name: "limit", value: String(limit))]
         if let game, !game.isEmpty { items.append(.init(name: "game", value: game)) }
-        return try await send(request: buildRequest(path: "/api/records", query: items))
+        let token = await MainActor.run { AuthService.shared.sessionToken() }
+        return try await send(request: buildRequest(path: "/api/records", query: items, sessionToken: token))
     }
 
     func getRecord(id: UUID) async throws -> GameRecord {
-        try await send(request: buildRequest(path: "/api/records/\(id.uuidString)"))
+        let token = await MainActor.run { AuthService.shared.sessionToken() }
+        return try await send(request: buildRequest(path: "/api/records/\(id.uuidString)", sessionToken: token))
     }
 
     func createRecord(_ body: RecordDraft) async throws -> GameRecord {
-        var request = buildRequest(path: "/api/records")
+        let token = await MainActor.run { AuthService.shared.sessionToken() }
+        var request = buildRequest(path: "/api/records", sessionToken: token)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try encoder.encode(body)
+        return try await send(request: request)
+    }
+
+    /// POSTs the Apple identity token to the server in exchange for our own session JWT.
+    /// No session token is attached — this call IS the sign-in.
+    func signInWithApple(_ body: AppleSignInRequest) async throws -> AuthSession {
+        var request = buildRequest(path: "/api/auth/apple", sessionToken: nil)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try encoder.encode(body)
@@ -48,12 +62,15 @@ actor APIClient {
 
     // MARK: - Internals
 
-    private func buildRequest(path: String, query: [URLQueryItem] = []) -> URLRequest {
+    private func buildRequest(path: String, query: [URLQueryItem] = [], sessionToken: String?) -> URLRequest {
         var components = URLComponents(url: AppConfig.baseURL.appending(path: path), resolvingAgainstBaseURL: false)!
         if !query.isEmpty { components.queryItems = query }
         var request = URLRequest(url: components.url!)
         request.setValue(AppConfig.apiKey, forHTTPHeaderField: "X-API-Key")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let sessionToken, !sessionToken.isEmpty {
+            request.setValue("Bearer \(sessionToken)", forHTTPHeaderField: "Authorization")
+        }
         return request
     }
 

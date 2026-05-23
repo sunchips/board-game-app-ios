@@ -10,6 +10,7 @@ struct GameRecord: Codable, Hashable, Sendable, Identifiable {
     let winners: [Int]
     let notes: String?
     let players: [RecordPlayer]
+    let userId: UUID?
     let createdAt: Date
 }
 
