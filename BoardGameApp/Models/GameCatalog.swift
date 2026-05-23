@@ -48,6 +48,7 @@ enum GameCatalog {
         codenames,
         coup,
         everdell,
+        hanabi,
         huesAndCues,
         jaipur,
         kingOfNewYork,
@@ -140,6 +141,24 @@ enum GameCatalog {
             .integer(key: "prosperity_vp", label: "Prosperity VP"),
             .integer(key: "constructions", label: "Constructions", max: 15),
             .integer(key: "critters", label: "Critters", max: 15),
+        ],
+    )
+
+    static let hanabi = GameDefinition(
+        slug: "hanabi", displayName: "Hanabi", yearPublished: 2010,
+        identityOptions: [],
+        supportsTeams: false, supportsElimination: false,
+        endStateFields: [
+            .integer(key: "score", label: "Score", max: 25),
+            .integer(key: "firework_red", label: "Red Firework", max: 5),
+            .integer(key: "firework_yellow", label: "Yellow Firework", max: 5),
+            .integer(key: "firework_green", label: "Green Firework", max: 5),
+            .integer(key: "firework_blue", label: "Blue Firework", max: 5),
+            .integer(key: "firework_white", label: "White Firework", max: 5),
+            .integer(key: "fuse_tokens_remaining", label: "Fuse Tokens Remaining", max: 3),
+            .integer(key: "hint_tokens_remaining", label: "Hint Tokens Remaining", max: 8),
+            .boolean(key: "perfect_score", label: "Perfect Score"),
+            .boolean(key: "exploded", label: "Exploded"),
         ],
     )
 

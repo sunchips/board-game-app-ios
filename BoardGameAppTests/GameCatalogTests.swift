@@ -8,7 +8,7 @@ struct GameCatalogTests {
     func allSlugsPresent() {
         let expected: Set<String> = [
             "bunny-kingdom", "calico", "catan", "codenames", "coup",
-            "everdell", "hues-and-cues", "jaipur", "king-of-new-york",
+            "everdell", "hanabi", "hues-and-cues", "jaipur", "king-of-new-york",
             "parks", "scythe", "secret-hitler", "the-king-is-dead",
             "viticulture", "wavelength",
         ]

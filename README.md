@@ -1,6 +1,6 @@
 # board-game-app-ios
 
-SwiftUI iOS app for recording board-game sessions against the [`board-game-server`](../board-game-server/) backend. Pick from 15 supported games, fill in a tailored form for that game's end-state, and browse past records.
+SwiftUI iOS app for recording board-game sessions against the [`board-game-server`](../board-game-server/) backend. Pick from 16 supported games, fill in a tailored form for that game's end-state, and browse past records.
 
 ## Stack
 
@@ -21,7 +21,7 @@ BoardGameApp/
 │   ├── GameSummary.swift            # server DTO
 │   ├── GameRecord.swift             # server DTO
 │   ├── RecordDraft.swift            # create-request payload (snake_case out)
-│   └── GameCatalog.swift            # 15 hardcoded GameDefinition entries
+│   └── GameCatalog.swift            # 16 hardcoded GameDefinition entries
 ├── Networking/
 │   ├── APIClient.swift              # URLSession actor, snake_case codable
 │   └── APIError.swift
