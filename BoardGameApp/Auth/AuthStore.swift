@@ -22,7 +22,10 @@ final class AuthStore {
     let userData: UserDataStore
 
     private static let sessionKey = "session"
-    private var expiryObserver: NSObjectProtocol?
+    // nonisolated(unsafe) so deinit (which is nonisolated) can read it. The
+    // token is set once during init and read once during deinit — both on the
+    // main actor in practice — so the unsafety is benign.
+    nonisolated(unsafe) private var expiryObserver: NSObjectProtocol?
 
     init(userData: UserDataStore = UserDataStore()) {
         self.userData = userData
