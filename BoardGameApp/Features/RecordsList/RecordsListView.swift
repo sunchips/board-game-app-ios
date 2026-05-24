@@ -26,9 +26,17 @@ struct RecordsListView: View {
                     description: Text("Submit a session from the Create tab to see it here."),
                 )
             } else {
-                List(visibleRecords) { record in
-                    NavigationLink(value: record) {
-                        RecordRow(record: record)
+                List {
+                    ForEach(visibleRecords) { record in
+                        NavigationLink(value: record) {
+                            RecordRow(record: record)
+                        }
+                    }
+                    .onDelete { offsets in
+                        let ids = offsets.map { visibleRecords[$0].id }
+                        Task {
+                            for id in ids { await userData.deleteRecord(id: id) }
+                        }
                     }
                 }
             }
