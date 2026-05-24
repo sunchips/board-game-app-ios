@@ -13,13 +13,6 @@ struct AuthResponse: Codable, Sendable {
     let isNewUser: Bool
 }
 
-/// Matches the SessionBundle DTO the server returns from `GET /api/session`.
-struct SessionBundle: Codable, Sendable {
-    let user: AppUser
-    let players: [SavedPlayer]
-    let records: [GameRecord]
-}
-
 struct AppleAuthRequest: Encodable, Sendable {
     let identityToken: String
     let fullName: String?
