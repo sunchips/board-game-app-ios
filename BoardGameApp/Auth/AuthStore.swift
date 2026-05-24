@@ -22,6 +22,7 @@ final class AuthStore {
     let userData: UserDataStore
 
     private static let sessionKey = "session"
+    private var expiryObserver: NSObjectProtocol?
 
     init(userData: UserDataStore = UserDataStore()) {
         self.userData = userData
@@ -32,8 +33,12 @@ final class AuthStore {
         }
     }
 
+    deinit {
+        if let expiryObserver { NotificationCenter.default.removeObserver(expiryObserver) }
+    }
+
     private func observeExpiryNotifications() {
-        NotificationCenter.default.addObserver(
+        expiryObserver = NotificationCenter.default.addObserver(
             forName: .apiSessionExpired,
             object: nil,
             queue: .main,
