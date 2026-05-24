@@ -71,6 +71,14 @@ actor APIClient {
         return try await send(request: request)
     }
 
+    func updateRecord(id: UUID, body: RecordDraft) async throws -> GameRecord {
+        var request = buildRequest(path: "/api/records/\(id.uuidString)")
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try encoder.encode(body)
+        return try await send(request: request)
+    }
+
     func deleteRecord(id: UUID) async throws {
         var request = buildRequest(path: "/api/records/\(id.uuidString)")
         request.httpMethod = "DELETE"

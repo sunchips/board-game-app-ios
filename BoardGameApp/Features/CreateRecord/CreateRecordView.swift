@@ -6,9 +6,11 @@ struct CreateRecordView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(UserDataStore.self) private var userData
 
-    init(game: GameDefinition) {
-        _model = State(initialValue: CreateRecordViewModel(game: game))
+    init(game: GameDefinition, editing: GameRecord? = nil) {
+        _model = State(initialValue: CreateRecordViewModel(game: game, editing: editing))
     }
+
+    private var isEditing: Bool { model.editingID != nil }
 
     var body: some View {
         Form {
@@ -91,7 +93,7 @@ struct CreateRecordView: View {
                 }
             }
         }
-        .navigationTitle(model.game.displayName)
+        .navigationTitle(isEditing ? "Edit \(model.game.displayName)" : model.game.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
@@ -109,7 +111,11 @@ struct CreateRecordView: View {
         }
         .onChange(of: model.didSubmit) { _, record in
             if let record {
-                userData.prependRecord(record)
+                if isEditing {
+                    userData.replaceRecord(record)
+                } else {
+                    userData.prependRecord(record)
+                }
                 // Manual player entries get auto-rostered server-side; pull the
                 // refreshed list so the new entries show up immediately.
                 Task { await userData.refreshPlayers() }

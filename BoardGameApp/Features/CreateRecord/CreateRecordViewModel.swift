@@ -21,9 +21,15 @@ final class CreateRecordViewModel {
     var errorMessage: String?
     var didSubmit: GameRecord?
 
-    init(game: GameDefinition) {
+    /// If non-nil, submit() PUTs against this record's id instead of POSTing
+    /// a new one. The view drives the create-vs-update distinction by passing
+    /// `editing:` at init time.
+    let editingID: UUID?
+
+    init(game: GameDefinition, editing: GameRecord? = nil) {
         self.game = game
-        self.players = []
+        self.editingID = editing?.id
+
         var ints: [String: Int] = [:]
         var bools: [String: Bool] = [:]
         for field in game.endStateFields {
@@ -34,6 +40,29 @@ final class CreateRecordViewModel {
         }
         self.teamIntegers = ints
         self.teamBooleans = bools
+
+        if let editing {
+            self.notes = editing.notes ?? ""
+            self.date = Self.dateFormatter.date(from: editing.date) ?? .now
+            self.players = editing.players.map { PlayerEntry.from(player: $0, game: game) }
+            self.winnerIndexes = Set(editing.winners)
+            // Cooperative: the per-player end_states are all identical (we
+            // stamp from teamIntegers/teamBooleans at create time). Seed the
+            // team fields from the first player so the Team Result section
+            // reflects what's on disk.
+            if game.isCooperative, let firstPlayer = editing.players.first {
+                for field in game.endStateFields {
+                    switch field {
+                    case .integer(let key, _, _, _):
+                        if case .integer(let v) = firstPlayer.endState[key] { self.teamIntegers[key] = v }
+                    case .boolean(let key, _):
+                        if case .boolean(let v) = firstPlayer.endState[key] { self.teamBooleans[key] = v }
+                    }
+                }
+            }
+        } else {
+            self.players = []
+        }
     }
 
     var canSubmit: Bool {
@@ -132,7 +161,12 @@ final class CreateRecordViewModel {
         defer { isSubmitting = false }
 
         do {
-            didSubmit = try await APIClient.shared.createRecord(buildDraft())
+            let draft = buildDraft()
+            didSubmit = if let editingID {
+                try await APIClient.shared.updateRecord(id: editingID, body: draft)
+            } else {
+                try await APIClient.shared.createRecord(draft)
+            }
         } catch let apiError as APIError {
             errorMessage = apiError.errorDescription ?? "Submission failed"
         } catch {
@@ -184,6 +218,26 @@ struct PlayerEntry: Identifiable, Hashable {
         entry.name = saved.name
         entry.email = saved.email ?? ""
         entry.isSelf = saved.isSelf
+        return entry
+    }
+
+    /// Populate from a previously-saved RecordPlayer (the edit-record path).
+    /// Pulls integers/booleans back out of the typed end_state map and rebinds
+    /// savedPlayerID so the server skips its find-or-create on update.
+    static func from(player: RecordPlayer, game: GameDefinition) -> PlayerEntry {
+        var entry = PlayerEntry.blank(for: game)
+        entry.savedPlayerID = player.savedPlayerID
+        entry.name = player.name
+        entry.email = player.email ?? ""
+        entry.identity = player.identity ?? ""
+        entry.team = player.team ?? 1
+        entry.eliminated = player.eliminated ?? false
+        for (key, value) in player.endState {
+            switch value {
+            case .integer(let i): entry.integers[key] = i
+            case .boolean(let b): entry.booleans[key] = b
+            }
+        }
         return entry
     }
 

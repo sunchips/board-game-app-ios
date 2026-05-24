@@ -7,6 +7,7 @@ struct RecordDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showDeleteConfirm = false
     @State private var isDeleting = false
+    @State private var isEditing = false
 
     private var gameDefinition: GameDefinition? { GameCatalog.find(slug: record.game) }
     private var displayName: String { gameDefinition?.displayName ?? record.game }
@@ -88,16 +89,40 @@ struct RecordDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button(role: .destructive) {
-                    showDeleteConfirm = true
+                Menu {
+                    if gameDefinition != nil {
+                        Button { isEditing = true } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                    }
+                    Button(role: .destructive) {
+                        showDeleteConfirm = true
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
                 } label: {
                     if isDeleting {
                         ProgressView()
                     } else {
-                        Image(systemName: "trash")
+                        Image(systemName: "ellipsis.circle")
                     }
                 }
                 .disabled(isDeleting)
+            }
+        }
+        .sheet(isPresented: $isEditing) {
+            if let game = gameDefinition {
+                // The freshest copy of the record lives in userData (post-edit
+                // replaceRecord); fall back to the prop if the row isn't there.
+                let current = userData.records.first(where: { $0.id == record.id }) ?? record
+                NavigationStack {
+                    CreateRecordView(game: game, editing: current)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Cancel") { isEditing = false }
+                            }
+                        }
+                }
             }
         }
         .confirmationDialog(

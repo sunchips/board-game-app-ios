@@ -56,6 +56,50 @@ struct CreateRecordViewModelTests {
         }
     }
 
+    @Test("Editing a record seeds the form from existing fields")
+    func editingPopulatesFormState() {
+        let catan = GameCatalog.find(slug: "catan")!
+        let existing = GameRecord(
+            id: UUID(),
+            game: "catan",
+            yearPublished: 1995,
+            variants: [],
+            date: "2026-04-19",
+            playerCount: 2,
+            winners: [0],
+            notes: "tense final turn",
+            players: [
+                RecordPlayer(
+                    name: "Alex", email: "alex@example.com", identity: "red",
+                    team: nil, eliminated: nil,
+                    endState: ["settlements": .integer(4)],
+                    savedPlayerID: UUID(),
+                ),
+                RecordPlayer(
+                    name: "Bea", email: nil, identity: "blue",
+                    team: nil, eliminated: nil,
+                    endState: ["settlements": .integer(2)],
+                    savedPlayerID: nil,
+                ),
+            ],
+            createdAt: Date(),
+        )
+
+        let model = CreateRecordViewModel(game: catan, editing: existing)
+        #expect(model.editingID == existing.id)
+        #expect(model.players.count == 2)
+        #expect(model.players[0].name == "Alex")
+        #expect(model.players[0].identity == "red")
+        #expect(model.players[0].integers["settlements"] == 4)
+        #expect(model.players[1].integers["settlements"] == 2)
+        #expect(model.winnerIndexes == [0])
+        #expect(model.notes == "tense final turn")
+        // Round-trip through buildDraft: savedPlayerID survives for Alex, nil for Bea.
+        let draft = model.buildDraft()
+        #expect(draft.players[0].savedPlayerID == existing.players[0].savedPlayerID)
+        #expect(draft.players[1].savedPlayerID == nil)
+    }
+
     @Test("Competitive games keep per-player end state")
     func competitiveKeepsPerPlayerEndState() {
         let catan = GameCatalog.find(slug: "catan")!

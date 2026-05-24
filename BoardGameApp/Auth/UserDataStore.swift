@@ -99,6 +99,16 @@ final class UserDataStore {
         records.insert(record, at: 0)
     }
 
+    func replaceRecord(_ record: GameRecord) {
+        if let idx = records.firstIndex(where: { $0.id == record.id }) {
+            records[idx] = record
+        } else {
+            // Edge case: editing a record we don't currently have locally.
+            // Prepend so the user sees their change immediately.
+            records.insert(record, at: 0)
+        }
+    }
+
     func remove(recordID: UUID) {
         records.removeAll { $0.id == recordID }
     }

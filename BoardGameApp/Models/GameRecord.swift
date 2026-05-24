@@ -20,9 +20,13 @@ struct RecordPlayer: Codable, Hashable, Sendable {
     let team: Int?
     let eliminated: Bool?
     let endState: [String: EndStateValue]
+    /// Roster row this player corresponds to. The server stamps this in on
+    /// create/update (find-or-create against the user's roster), so on read
+    /// it's reliably populated and we can pre-fill it back into the edit form.
+    let savedPlayerID: UUID?
 
     enum CodingKeys: String, CodingKey {
-        case name, email, identity, team, eliminated, endState
+        case name, email, identity, team, eliminated, endState, savedPlayerID
     }
 }
 
