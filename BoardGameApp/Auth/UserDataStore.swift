@@ -98,4 +98,31 @@ final class UserDataStore {
     func prependRecord(_ record: GameRecord) {
         records.insert(record, at: 0)
     }
+
+    func remove(recordID: UUID) {
+        records.removeAll { $0.id == recordID }
+    }
+
+    /// API call + local prune in one place so the views don't have to
+    /// coordinate. Returns `true` on success, `false` on failure (and surfaces
+    /// the error via `errorMessage`). Idempotent server-side — a 404 means the
+    /// row was already gone, which we treat as success for the local store.
+    @discardableResult
+    func deleteRecord(id: UUID) async -> Bool {
+        do {
+            try await APIClient.shared.deleteRecord(id: id)
+            remove(recordID: id)
+            return true
+        } catch let apiError as APIError {
+            if apiError.status == 404 {
+                remove(recordID: id)
+                return true
+            }
+            errorMessage = apiError.errorDescription ?? "Couldn't delete record"
+            return false
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
 }

@@ -71,6 +71,12 @@ actor APIClient {
         return try await send(request: request)
     }
 
+    func deleteRecord(id: UUID) async throws {
+        var request = buildRequest(path: "/api/records/\(id.uuidString)")
+        request.httpMethod = "DELETE"
+        try await sendNoContent(request: request)
+    }
+
     // MARK: - Saved players
 
     func listSavedPlayers() async throws -> [SavedPlayer] {
