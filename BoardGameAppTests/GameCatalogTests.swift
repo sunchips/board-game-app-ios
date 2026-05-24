@@ -61,4 +61,18 @@ struct GameCatalogTests {
         let names = GameCatalog.all.map(\.displayName)
         #expect(names == names.sorted())
     }
+
+    @Test("Hanabi is marked cooperative")
+    func hanabiIsCooperative() {
+        let hanabi = GameCatalog.find(slug: "hanabi")
+        #expect(hanabi?.isCooperative == true)
+    }
+
+    @Test("Hanabi is the only cooperative game today")
+    func onlyHanabiIsCooperative() {
+        // Guards against flag flips on competitive games. When the next coop
+        // game lands (Pandemic, Spirit Island, …), update this set explicitly.
+        let coopSlugs = Set(GameCatalog.all.filter(\.isCooperative).map(\.slug))
+        #expect(coopSlugs == ["hanabi"])
+    }
 }
