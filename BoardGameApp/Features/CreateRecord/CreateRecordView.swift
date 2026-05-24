@@ -106,7 +106,7 @@ struct CreateRecordView: View {
             }
         }
         .sheet(isPresented: $showingRoster) {
-            RosterPickerSheet { picked in
+            RosterPickerSheet(alreadyPickedIDs: model.pickedSavedPlayerIDs) { picked in
                 model.addPlayers(from: picked)
             }
         }
