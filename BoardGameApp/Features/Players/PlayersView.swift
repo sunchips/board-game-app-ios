@@ -122,7 +122,17 @@ private struct PlayerRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(player.name).font(.headline)
+            HStack {
+                Text(player.name).font(.headline)
+                if player.isSelf {
+                    Text("You")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.tint)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.accentColor.opacity(0.15), in: Capsule())
+                }
+            }
             if let email = player.email {
                 Text(email).font(.caption).foregroundStyle(.secondary)
             }

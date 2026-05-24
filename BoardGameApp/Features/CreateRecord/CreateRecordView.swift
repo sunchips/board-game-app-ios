@@ -25,6 +25,14 @@ struct CreateRecordView: View {
                 }
                 .onDelete { model.removePlayer(at: $0) }
 
+                if let me = userData.players.first(where: \.isSelf), !model.hasSelf {
+                    Button {
+                        model.addPlayers(from: [me])
+                    } label: {
+                        Label("Add Me", systemImage: "person.crop.circle.badge.plus")
+                    }
+                }
+
                 Button {
                     showingRoster = true
                 } label: {

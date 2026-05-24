@@ -5,6 +5,7 @@ struct SavedPlayer: Codable, Hashable, Sendable, Identifiable {
     var name: String
     var email: String?
     var notes: String?
+    var isSelf: Bool
     let createdAt: Date
     let updatedAt: Date
 }

@@ -36,6 +36,8 @@ final class CreateRecordViewModel {
         players.append(contentsOf: saved.map { PlayerEntry.from(saved: $0, game: game) })
     }
 
+    var hasSelf: Bool { players.contains(where: \.isSelf) }
+
     func removePlayer(at offsets: IndexSet) {
         players.remove(atOffsets: offsets)
         winnerIndexes = Set(winnerIndexes.compactMap { idx -> Int? in
@@ -87,6 +89,7 @@ struct PlayerEntry: Identifiable, Hashable {
     var identity: String = ""
     var team: Int = 1
     var eliminated: Bool = false
+    var isSelf: Bool = false
     var integers: [String: Int]
     var booleans: [String: Bool]
 
@@ -106,6 +109,7 @@ struct PlayerEntry: Identifiable, Hashable {
         var entry = PlayerEntry.blank(for: game)
         entry.name = saved.name
         entry.email = saved.email ?? ""
+        entry.isSelf = saved.isSelf
         return entry
     }
 
