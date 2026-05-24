@@ -79,3 +79,17 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.sanchitb.boardgamerecorder.tests
         GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  BoardGameApp:
+    build:
+      targets:
+        BoardGameApp: all
+        BoardGameAppTests: [test]
+    test:
+      targets:
+        - BoardGameAppTests
+    run:
+      config: Debug
+    archive:
+      config: Release
