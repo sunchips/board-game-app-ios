@@ -46,6 +46,14 @@ struct CreateRecordView: View {
                 }
             }
 
+            if model.game.isCooperative && !model.game.endStateFields.isEmpty {
+                Section("Team Result") {
+                    ForEach(model.game.endStateFields, id: \.key) { field in
+                        EndStateFieldView(field: field, integers: $model.teamIntegers, booleans: $model.teamBooleans)
+                    }
+                }
+            }
+
             Section(model.game.isCooperative ? "Outcome" : "Winners") {
                 if model.players.isEmpty {
                     Text("Add players first").foregroundStyle(.secondary)

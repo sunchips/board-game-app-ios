@@ -11,6 +11,12 @@ final class CreateRecordViewModel {
     var players: [PlayerEntry]
     var winnerIndexes: Set<Int> = []
 
+    /// Cooperative games share an end state — everyone scores the same. These
+    /// hold the shared values; at submit time they're stamped onto every
+    /// player's draft. Initialised with the game's defaults (mins / false).
+    var teamIntegers: [String: Int]
+    var teamBooleans: [String: Bool]
+
     var isSubmitting: Bool = false
     var errorMessage: String?
     var didSubmit: GameRecord?
@@ -18,6 +24,16 @@ final class CreateRecordViewModel {
     init(game: GameDefinition) {
         self.game = game
         self.players = []
+        var ints: [String: Int] = [:]
+        var bools: [String: Bool] = [:]
+        for field in game.endStateFields {
+            switch field {
+            case .integer(let key, _, let min, _): ints[key] = min
+            case .boolean(let key, _): bools[key] = false
+            }
+        }
+        self.teamIntegers = ints
+        self.teamBooleans = bools
     }
 
     var canSubmit: Bool {
@@ -84,13 +100,20 @@ final class CreateRecordViewModel {
         }
     }
 
-    func submit() async {
-        guard canSubmit else { return }
-        isSubmitting = true
-        errorMessage = nil
-        defer { isSubmitting = false }
-
-        let draft = RecordDraft(
+    /// Snapshot the current form into a wire-format draft. Pure / sync so it
+    /// can be unit-tested without standing up an APIClient. `submit()` is the
+    /// only production caller.
+    func buildDraft() -> RecordDraft {
+        let playerDrafts = players.map { entry -> PlayerDraft in
+            // Cooperative: stamp the shared team end-state onto every player
+            // at submit time. The UI only exposes one input per field.
+            guard game.isCooperative else { return entry.toDraft(game: game) }
+            var copy = entry
+            copy.integers = teamIntegers
+            copy.booleans = teamBooleans
+            return copy.toDraft(game: game)
+        }
+        return RecordDraft(
             game: game.slug,
             variants: [],
             yearPublished: game.yearPublished,
@@ -98,11 +121,18 @@ final class CreateRecordViewModel {
             playerCount: players.count,
             winners: winnerIndexes.sorted(),
             notes: notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : notes,
-            players: players.map { $0.toDraft(game: game) },
+            players: playerDrafts,
         )
+    }
+
+    func submit() async {
+        guard canSubmit else { return }
+        isSubmitting = true
+        errorMessage = nil
+        defer { isSubmitting = false }
 
         do {
-            didSubmit = try await APIClient.shared.createRecord(draft)
+            didSubmit = try await APIClient.shared.createRecord(buildDraft())
         } catch let apiError as APIError {
             errorMessage = apiError.errorDescription ?? "Submission failed"
         } catch {

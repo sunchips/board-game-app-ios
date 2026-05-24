@@ -32,8 +32,12 @@ struct PlayerEditorView: View {
                 Toggle("Eliminated", isOn: $entry.eliminated)
             }
 
-            ForEach(game.endStateFields, id: \.key) { field in
-                EndStateFieldView(field: field, integers: $entry.integers, booleans: $entry.booleans)
+            // Cooperative games share one end state across the whole table —
+            // it's edited in the form's Team Result section, not per-player.
+            if !game.isCooperative {
+                ForEach(game.endStateFields, id: \.key) { field in
+                    EndStateFieldView(field: field, integers: $entry.integers, booleans: $entry.booleans)
+                }
             }
         }
     }
