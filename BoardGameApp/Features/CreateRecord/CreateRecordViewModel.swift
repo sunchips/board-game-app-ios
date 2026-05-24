@@ -24,16 +24,32 @@ final class CreateRecordViewModel {
         !isSubmitting &&
             players.count >= 1 &&
             players.allSatisfy { !$0.name.trimmingCharacters(in: .whitespaces).isEmpty } &&
-            !winnerIndexes.isEmpty &&
+            // Cooperative games are all-or-nothing: an empty winnerIndexes set
+            // encodes a team loss, which is a valid record. Competitive games
+            // still require at least one winner.
+            (game.isCooperative || !winnerIndexes.isEmpty) &&
             winnerIndexes.allSatisfy { $0 < players.count }
+    }
+
+    /// Coop-only convenience: mirror of `winnerIndexes` as a single Bool.
+    /// `true` means every player index is a winner; `false` means the
+    /// `winnerIndexes` set is empty. Reads/writes are valid only when
+    /// `game.isCooperative` is true — the view gates on it.
+    var teamWon: Bool {
+        get { !winnerIndexes.isEmpty }
+        set {
+            winnerIndexes = newValue ? Set(players.indices) : []
+        }
     }
 
     func addPlayer() {
         players.append(.blank(for: game))
+        syncCooperativeWinners()
     }
 
     func addPlayers(from saved: [SavedPlayer]) {
         players.append(contentsOf: saved.map { PlayerEntry.from(saved: $0, game: game) })
+        syncCooperativeWinners()
     }
 
     var hasSelf: Bool { players.contains(where: \.isSelf) }
@@ -44,6 +60,17 @@ final class CreateRecordViewModel {
             guard idx < players.count else { return nil }
             return idx
         })
+        syncCooperativeWinners()
+    }
+
+    /// Maintain the all-or-nothing invariant for cooperative games as players
+    /// are added or removed: if any winner was marked, every player index is a
+    /// winner; otherwise none are. No-op for competitive games.
+    private func syncCooperativeWinners() {
+        guard game.isCooperative else { return }
+        if !winnerIndexes.isEmpty {
+            winnerIndexes = Set(players.indices)
+        }
     }
 
     func submit() async {

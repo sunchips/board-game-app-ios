@@ -46,9 +46,16 @@ struct CreateRecordView: View {
                 }
             }
 
-            Section("Winners") {
+            Section(model.game.isCooperative ? "Outcome" : "Winners") {
                 if model.players.isEmpty {
                     Text("Add players first").foregroundStyle(.secondary)
+                } else if model.game.isCooperative {
+                    Toggle("Team won this game", isOn: $model.teamWon)
+                    Text(model.teamWon
+                        ? "Every player will be recorded as a winner."
+                        : "Nobody will be recorded as a winner — this is a team loss.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 } else {
                     ForEach(Array(model.players.enumerated()), id: \.element.id) { index, entry in
                         Toggle(isOn: Binding(
