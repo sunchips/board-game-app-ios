@@ -48,11 +48,22 @@ final class CreateRecordViewModel {
     }
 
     func addPlayers(from saved: [SavedPlayer]) {
-        players.append(contentsOf: saved.map { PlayerEntry.from(saved: $0, game: game) })
+        // Skip anyone already represented by their SavedPlayer.id — the picker
+        // also filters these out, but this is the model-layer safety net so a
+        // future call site can't accidentally double-add.
+        let already = pickedSavedPlayerIDs
+        let fresh = saved.filter { !already.contains($0.id) }
+        players.append(contentsOf: fresh.map { PlayerEntry.from(saved: $0, game: game) })
         syncCooperativeWinners()
     }
 
     var hasSelf: Bool { players.contains(where: \.isSelf) }
+
+    /// SavedPlayer ids currently represented in the draft. Used by the roster
+    /// picker to disable rows that would otherwise be duplicate-adds.
+    var pickedSavedPlayerIDs: Set<UUID> {
+        Set(players.compactMap(\.savedPlayerID))
+    }
 
     func removePlayer(at offsets: IndexSet) {
         players.remove(atOffsets: offsets)
@@ -111,6 +122,11 @@ final class CreateRecordViewModel {
 
 struct PlayerEntry: Identifiable, Hashable {
     let id = UUID()
+    /// When this entry was populated from a row in the saved-player roster,
+    /// this captures the SavedPlayer.id so duplicate-add affordances can
+    /// recognise the player without resorting to fragile name matching.
+    /// `nil` for manual entries.
+    var savedPlayerID: UUID? = nil
     var name: String = ""
     var email: String = ""
     var identity: String = ""
@@ -134,6 +150,7 @@ struct PlayerEntry: Identifiable, Hashable {
 
     static func from(saved: SavedPlayer, game: GameDefinition) -> PlayerEntry {
         var entry = PlayerEntry.blank(for: game)
+        entry.savedPlayerID = saved.id
         entry.name = saved.name
         entry.email = saved.email ?? ""
         entry.isSelf = saved.isSelf
