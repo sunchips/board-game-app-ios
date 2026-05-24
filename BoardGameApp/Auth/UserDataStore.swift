@@ -202,13 +202,13 @@ final class UserDataStore {
         let savedAt: Date
     }
 
-    private static let snapshotEncoder: JSONEncoder = {
+    nonisolated private static let snapshotEncoder: JSONEncoder = {
         let e = JSONEncoder()
         e.dateEncodingStrategy = .iso8601
         return e
     }()
 
-    private static let snapshotDecoder: JSONDecoder = {
+    nonisolated private static let snapshotDecoder: JSONDecoder = {
         let d = JSONDecoder()
         d.dateDecodingStrategy = .iso8601
         return d
