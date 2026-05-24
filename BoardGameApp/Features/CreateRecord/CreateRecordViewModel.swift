@@ -17,7 +17,7 @@ final class CreateRecordViewModel {
 
     init(game: GameDefinition) {
         self.game = game
-        self.players = [PlayerEntry.blank(for: game), PlayerEntry.blank(for: game)]
+        self.players = []
     }
 
     var canSubmit: Bool {
