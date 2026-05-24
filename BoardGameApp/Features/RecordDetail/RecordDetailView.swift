@@ -3,6 +3,11 @@ import SwiftUI
 struct RecordDetailView: View {
     let record: GameRecord
 
+    @Environment(UserDataStore.self) private var userData
+    @Environment(\.dismiss) private var dismiss
+    @State private var showDeleteConfirm = false
+    @State private var isDeleting = false
+
     private var gameDefinition: GameDefinition? { GameCatalog.find(slug: record.game) }
     private var displayName: String { gameDefinition?.displayName ?? record.game }
 
@@ -81,6 +86,42 @@ struct RecordDetailView: View {
         }
         .navigationTitle(displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(role: .destructive) {
+                    showDeleteConfirm = true
+                } label: {
+                    if isDeleting {
+                        ProgressView()
+                    } else {
+                        Image(systemName: "trash")
+                    }
+                }
+                .disabled(isDeleting)
+            }
+        }
+        .confirmationDialog(
+            "Delete this record?",
+            isPresented: $showDeleteConfirm,
+            titleVisibility: .visible,
+        ) {
+            Button("Delete", role: .destructive) {
+                Task { await performDelete() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will permanently remove the \(displayName) session from \(record.date).")
+        }
+    }
+
+    private func performDelete() async {
+        isDeleting = true
+        defer { isDeleting = false }
+        if await userData.deleteRecord(id: record.id) {
+            dismiss()
+        }
+        // On failure, userData.errorMessage is set; the list view's
+        // empty-state ContentUnavailableView surfaces it on the next render.
     }
 
     private func orderedEndStateKeys(for player: RecordPlayer) -> [String] {
