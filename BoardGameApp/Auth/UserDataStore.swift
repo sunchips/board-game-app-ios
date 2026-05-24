@@ -6,6 +6,10 @@ import Observation
 /// in parallel via independent endpoints — each surface updates as its data
 /// arrives, so the slower tail call (usually records) doesn't gate the other.
 /// Pull-to-refresh on either tab uses the same per-section refresh method.
+///
+/// A disk snapshot mirrors the in-memory state so the next cold launch can
+/// render the tabs immediately from cache while the network catches up.
+/// Cache is per-user (keyed by AuthSession.user.id) and is cleared on sign-out.
 @MainActor
 @Observable
 final class UserDataStore {
@@ -18,6 +22,10 @@ final class UserDataStore {
     var isHydratingRecords: Bool = false
     var isLoadingMoreRecords: Bool = false
     var errorMessage: String?
+
+    /// Last persisted snapshot wall-clock time. Views can show it as a
+    /// "Last updated …" footer if they want.
+    private(set) var snapshotLoadedAt: Date?
 
     /// True while either bucket is filling. Used by views that want a single
     /// "anything-loading" indicator (e.g. a toolbar spinner).
@@ -38,10 +46,13 @@ final class UserDataStore {
 
     func attach(session: AuthSession?) async {
         self.session = session
-        guard session != nil else {
+        guard let session else {
             clear()
             return
         }
+        // Restore cached state synchronously first so the tabs render
+        // immediately on relaunch instead of waiting on the network.
+        loadSnapshot(for: session.user.id)
         await hydrate()
     }
 
@@ -52,6 +63,10 @@ final class UserDataStore {
         errorMessage = nil
         playersLastLoadedAt = nil
         recordsLastLoadedAt = nil
+        snapshotLoadedAt = nil
+        if let url = currentSnapshotURL() {
+            try? FileManager.default.removeItem(at: url)
+        }
     }
 
     /// Kick off both fetches in parallel. Each tab observes its own loading
@@ -73,6 +88,7 @@ final class UserDataStore {
             let fetched = try await APIClient.shared.listSavedPlayers()
             players = fetched.sorted { $0.name.lowercased() < $1.name.lowercased() }
             playersLastLoadedAt = Date()
+            saveSnapshot()
         } catch let apiError as APIError {
             errorMessage = apiError.errorDescription
         } catch {
@@ -89,6 +105,7 @@ final class UserDataStore {
             records = fetched
             allRecordsLoaded = fetched.count < limit
             recordsLastLoadedAt = Date()
+            saveSnapshot()
         } catch let apiError as APIError {
             errorMessage = apiError.errorDescription
         } catch {
@@ -161,10 +178,12 @@ final class UserDataStore {
         do {
             try await APIClient.shared.deleteRecord(id: id)
             remove(recordID: id)
+            saveSnapshot()
             return true
         } catch let apiError as APIError {
             if apiError.status == 404 {
                 remove(recordID: id)
+                saveSnapshot()
                 return true
             }
             errorMessage = apiError.errorDescription ?? "Couldn't delete record"
@@ -172,6 +191,59 @@ final class UserDataStore {
         } catch {
             errorMessage = error.localizedDescription
             return false
+        }
+    }
+
+    // MARK: - Snapshot persistence
+
+    private struct Snapshot: Codable {
+        let players: [SavedPlayer]
+        let records: [GameRecord]
+        let savedAt: Date
+    }
+
+    private static let snapshotEncoder: JSONEncoder = {
+        let e = JSONEncoder()
+        e.dateEncodingStrategy = .iso8601
+        return e
+    }()
+
+    private static let snapshotDecoder: JSONDecoder = {
+        let d = JSONDecoder()
+        d.dateDecodingStrategy = .iso8601
+        return d
+    }()
+
+    private func snapshotURL(for userID: UUID) -> URL? {
+        guard let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        return caches.appending(path: "snapshot-\(userID.uuidString).json")
+    }
+
+    private func currentSnapshotURL() -> URL? {
+        guard let userID = session?.user.id else { return nil }
+        return snapshotURL(for: userID)
+    }
+
+    private func loadSnapshot(for userID: UUID) {
+        guard let url = snapshotURL(for: userID),
+              let data = try? Data(contentsOf: url),
+              let snapshot = try? Self.snapshotDecoder.decode(Snapshot.self, from: data)
+        else { return }
+        // Don't clobber fresh state if hydrate already landed.
+        if players.isEmpty { players = snapshot.players }
+        if records.isEmpty { records = snapshot.records }
+        snapshotLoadedAt = snapshot.savedAt
+    }
+
+    private func saveSnapshot() {
+        guard let url = currentSnapshotURL() else { return }
+        let snapshot = Snapshot(players: players, records: records, savedAt: Date())
+        // Fire-and-forget write on a detached task so we never block the UI.
+        Task.detached(priority: .utility) { [snapshot] in
+            guard let data = try? Self.snapshotEncoder.encode(snapshot) else { return }
+            try? data.write(to: url, options: .atomic)
         }
     }
 }

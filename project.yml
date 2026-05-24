@@ -37,6 +37,8 @@ targets:
         LSRequiresIPhoneOS: true
         UILaunchScreen:
           UIColorName: AccentColor
+          UIImageName: LaunchLogo
+          UIImageRespectsSafeAreaInsets: true
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
         NSAppTransportSecurity:
