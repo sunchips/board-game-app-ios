@@ -18,7 +18,31 @@ struct GameDefinition: Identifiable, Hashable, Sendable {
     let identityOptions: [String]
     let supportsTeams: Bool
     let supportsElimination: Bool
+    /// Fully cooperative game (e.g. Hanabi). When true, the create-record form
+    /// shows a single "Team won this game" toggle instead of a per-player
+    /// winner picker — `winners` is conventionally all-or-nothing.
+    let isCooperative: Bool
     let endStateFields: [EndStateField]
+
+    init(
+        slug: String,
+        displayName: String,
+        yearPublished: Int?,
+        identityOptions: [String],
+        supportsTeams: Bool,
+        supportsElimination: Bool,
+        isCooperative: Bool = false,
+        endStateFields: [EndStateField],
+    ) {
+        self.slug = slug
+        self.displayName = displayName
+        self.yearPublished = yearPublished
+        self.identityOptions = identityOptions
+        self.supportsTeams = supportsTeams
+        self.supportsElimination = supportsElimination
+        self.isCooperative = isCooperative
+        self.endStateFields = endStateFields
+    }
 }
 
 enum EndStateField: Hashable, Sendable {
@@ -148,6 +172,7 @@ enum GameCatalog {
         slug: "hanabi", displayName: "Hanabi", yearPublished: 2010,
         identityOptions: [],
         supportsTeams: false, supportsElimination: false,
+        isCooperative: true,
         endStateFields: [
             .integer(key: "score", label: "Score", max: 25),
             .integer(key: "firework_red", label: "Red Firework", max: 5),
