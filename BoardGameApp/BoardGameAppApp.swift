@@ -15,12 +15,40 @@ struct BoardGameAppApp: App {
 
 struct RootView: View {
     @Environment(AuthStore.self) private var auth
+    @Environment(UserDataStore.self) private var userData
 
     var body: some View {
         if auth.isSignedIn {
-            SignedInTabs()
+            if userData.isInitialLoad {
+                LaunchSplash()
+            } else {
+                SignedInTabs()
+            }
         } else {
             LoginView()
+        }
+    }
+}
+
+/// Shown for the brief window between a session being restored from Keychain
+/// and the first /api/session hydration landing. Without this the user sees
+/// empty tabs while the network call is in flight. The view matches the iOS
+/// launch screen (accent-colored background) so the handoff is seamless.
+private struct LaunchSplash: View {
+    var body: some View {
+        ZStack {
+            Color.accentColor.ignoresSafeArea()
+            VStack(spacing: 16) {
+                Image(systemName: "die.face.5.fill")
+                    .font(.system(size: 72))
+                    .foregroundStyle(.white)
+                Text("Board Game")
+                    .font(.largeTitle.bold())
+                    .foregroundStyle(.white)
+                ProgressView()
+                    .tint(.white)
+                    .padding(.top, 8)
+            }
         }
     }
 }
