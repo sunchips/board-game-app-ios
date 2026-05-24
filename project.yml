@@ -41,6 +41,7 @@ targets:
           UIApplicationSupportsMultipleScenes: false
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
+        NSLocalNetworkUsageDescription: Connects to the Board Game server running on your local network.
         ServerBaseURL: $(SERVER_BASE_URL)
     entitlements:
       path: BoardGameApp/BoardGameApp.entitlements
