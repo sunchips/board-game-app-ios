@@ -11,7 +11,7 @@ struct RecordsListView: View {
 
     var body: some View {
         Group {
-            if userData.isHydrating && userData.records.isEmpty {
+            if userData.isHydratingRecords && userData.records.isEmpty {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let message = userData.errorMessage, userData.records.isEmpty {
                 ContentUnavailableView(
@@ -37,6 +37,26 @@ struct RecordsListView: View {
                         Task {
                             for id in ids { await userData.deleteRecord(id: id) }
                         }
+                    }
+
+                    // Bottom sentinel: when the user scrolls it into view, we
+                    // ask for the next page. Hidden while a fetch is in flight
+                    // so the spinner doesn't flicker; replaced by the spinner
+                    // row during the actual load.
+                    if !userData.allRecordsLoaded && selectedGame == nil {
+                        HStack {
+                            Spacer()
+                            if userData.isLoadingMoreRecords {
+                                ProgressView()
+                            } else {
+                                Color.clear.frame(height: 1)
+                                    .onAppear {
+                                        Task { await userData.loadMoreRecords() }
+                                    }
+                            }
+                            Spacer()
+                        }
+                        .listRowSeparator(.hidden)
                     }
                 }
             }

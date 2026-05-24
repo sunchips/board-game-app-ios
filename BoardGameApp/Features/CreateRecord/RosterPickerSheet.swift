@@ -18,7 +18,7 @@ struct RosterPickerSheet: View {
     var body: some View {
         NavigationStack {
             Group {
-                if userData.isHydrating && userData.players.isEmpty {
+                if userData.isHydratingPlayers && userData.players.isEmpty {
                     ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if userData.players.isEmpty {
                     ContentUnavailableView(

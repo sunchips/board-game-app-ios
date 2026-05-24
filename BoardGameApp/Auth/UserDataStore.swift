@@ -2,26 +2,37 @@ import Foundation
 import Observation
 
 /// Single source of truth for the signed-in user's content. `AuthStore` calls
-/// `hydrate(from:)` the moment a session lands (whether fresh sign-in or
-/// restore from Keychain), so the Records and Players tabs render instantly
-/// with whatever was on the server at launch. Pull-to-refresh on either tab
-/// then uses the dedicated `refresh*` methods.
+/// `hydrate()` the moment a session lands. Players and records are fetched
+/// in parallel via independent endpoints — each surface updates as its data
+/// arrives, so the slower tail call (usually records) doesn't gate the other.
+/// Pull-to-refresh on either tab uses the same per-section refresh method.
 @MainActor
 @Observable
 final class UserDataStore {
     var players: [SavedPlayer] = []
     var records: [GameRecord] = []
-    var isHydrating: Bool = false
+    /// First page only; older records load on demand via `loadMoreRecords()`.
+    /// Set true once a page comes back short of the page size.
+    private(set) var allRecordsLoaded: Bool = false
+    var isHydratingPlayers: Bool = false
+    var isHydratingRecords: Bool = false
+    var isLoadingMoreRecords: Bool = false
     var errorMessage: String?
 
-    /// Latest full-bundle fetch time — views can decide whether to kick a
-    /// background refresh (e.g. on tab appear) based on this.
-    private(set) var lastHydratedAt: Date?
+    /// True while either bucket is filling. Used by views that want a single
+    /// "anything-loading" indicator (e.g. a toolbar spinner).
+    var isHydrating: Bool { isHydratingPlayers || isHydratingRecords }
 
-    /// True between an Apple sign-in succeeding and the first bundle landing.
-    /// The login screen watches this to keep the spinner up and avoid a split
-    /// second of empty tabs.
-    var isInitialLoad: Bool { session != nil && lastHydratedAt == nil && isHydrating }
+    /// Wall-clock of last successful refresh per bucket. Views can use these
+    /// to gate background refreshes on tab reappearance (skip if recent).
+    private(set) var playersLastLoadedAt: Date?
+    private(set) var recordsLastLoadedAt: Date?
+
+    /// Initial fetch size — small enough to render fast on a cold session,
+    /// large enough that most users never hit "Load more".
+    private static let initialRecordsPageSize = 50
+    /// Subsequent page size when loading more.
+    private static let recordsPageSize = 100
 
     private var session: AuthSession?
 
@@ -37,32 +48,31 @@ final class UserDataStore {
     func clear() {
         players = []
         records = []
+        allRecordsLoaded = false
         errorMessage = nil
-        lastHydratedAt = nil
+        playersLastLoadedAt = nil
+        recordsLastLoadedAt = nil
     }
 
-    /// Pull everything the app needs in one authenticated round-trip.
+    /// Kick off both fetches in parallel. Each tab observes its own loading
+    /// flag and array independently, so the UI fills incrementally — the
+    /// faster response paints first and the screen never sits empty waiting
+    /// on the slower one.
     func hydrate() async {
         guard session != nil else { return }
-        isHydrating = true
         errorMessage = nil
-        defer { isHydrating = false }
-        do {
-            let bundle = try await APIClient.shared.fetchSessionBundle()
-            players = bundle.players.sorted { $0.name.lowercased() < $1.name.lowercased() }
-            records = bundle.records
-            lastHydratedAt = Date()
-        } catch let apiError as APIError {
-            errorMessage = apiError.errorDescription ?? "Couldn't load your data"
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        async let players: Void = refreshPlayers()
+        async let records: Void = refreshRecords()
+        _ = await (players, records)
     }
 
     func refreshPlayers() async {
+        isHydratingPlayers = true
+        defer { isHydratingPlayers = false }
         do {
             let fetched = try await APIClient.shared.listSavedPlayers()
             players = fetched.sorted { $0.name.lowercased() < $1.name.lowercased() }
+            playersLastLoadedAt = Date()
         } catch let apiError as APIError {
             errorMessage = apiError.errorDescription
         } catch {
@@ -71,8 +81,37 @@ final class UserDataStore {
     }
 
     func refreshRecords(game: String? = nil) async {
+        isHydratingRecords = true
+        defer { isHydratingRecords = false }
         do {
-            records = try await APIClient.shared.listRecords(game: game)
+            let limit = Self.initialRecordsPageSize
+            let fetched = try await APIClient.shared.listRecords(game: game, limit: limit)
+            records = fetched
+            allRecordsLoaded = fetched.count < limit
+            recordsLastLoadedAt = Date()
+        } catch let apiError as APIError {
+            errorMessage = apiError.errorDescription
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Append the next page of older records. Triggered by the bottom-of-list
+    /// sentinel in RecordsListView. No-op if we've already loaded everything
+    /// or another page fetch is in flight.
+    func loadMoreRecords() async {
+        guard !isLoadingMoreRecords, !allRecordsLoaded, session != nil else { return }
+        isLoadingMoreRecords = true
+        defer { isLoadingMoreRecords = false }
+        do {
+            // The server doesn't support keyset pagination yet, so we ask for
+            // the running total + one page and slice off what we already have.
+            // Cheap until the user has thousands of records, at which point
+            // server-side pagination becomes worth adding.
+            let want = records.count + Self.recordsPageSize
+            let fetched = try await APIClient.shared.listRecords(game: nil, limit: want)
+            allRecordsLoaded = fetched.count < want
+            records = fetched
         } catch let apiError as APIError {
             errorMessage = apiError.errorDescription
         } catch {
