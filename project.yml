@@ -58,6 +58,15 @@ targets:
         ENABLE_USER_SCRIPT_SANDBOXING: YES
         GENERATE_INFOPLIST_FILE: NO
         CODE_SIGN_ENTITLEMENTS: BoardGameApp/BoardGameApp.entitlements
+        # Xcode 26 ships Debug builds as a thin stub binary + .debug.dylib
+        # loaded via @rpath. Speeds up SwiftUI Previews, but the stub's rpath
+        # resolution depends on environment hints Xcode injects via its
+        # debugserver — so the app renders fine via ⌘R but cold-launches
+        # (tapping the icon, or running through TestFlight) draw a blank
+        # white screen because the dylib never wires into the SwiftUI scene.
+        # Disabling this falls back to a single-binary Debug build; Previews
+        # still work via the older mechanism, just a hair slower.
+        ENABLE_DEBUG_DYLIB: NO
 
   BoardGameAppTests:
     type: bundle.unit-test
