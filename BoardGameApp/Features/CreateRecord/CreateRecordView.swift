@@ -110,6 +110,9 @@ struct CreateRecordView: View {
         .onChange(of: model.didSubmit) { _, record in
             if let record {
                 userData.prependRecord(record)
+                // Manual player entries get auto-rostered server-side; pull the
+                // refreshed list so the new entries show up immediately.
+                Task { await userData.refreshPlayers() }
                 dismiss()
             }
         }

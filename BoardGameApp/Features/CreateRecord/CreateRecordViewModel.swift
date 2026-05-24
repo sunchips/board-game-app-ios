@@ -204,6 +204,7 @@ struct PlayerEntry: Identifiable, Hashable {
             team: game.supportsTeams ? team : nil,
             eliminated: game.supportsElimination ? eliminated : nil,
             endState: endState,
+            savedPlayerID: savedPlayerID,
         )
     }
 }

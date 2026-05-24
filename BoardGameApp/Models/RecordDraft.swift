@@ -20,4 +20,8 @@ struct PlayerDraft: Encodable, Sendable {
     let team: Int?
     let eliminated: Bool?
     let endState: [String: EndStateValue]
+    /// Roster reference. Set when the entry was picked from the saved roster
+    /// (so the server skips its find-or-create); left nil for manual entries
+    /// so the server creates a roster row from name/email.
+    let savedPlayerID: UUID?
 }
