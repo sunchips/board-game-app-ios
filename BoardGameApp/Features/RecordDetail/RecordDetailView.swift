@@ -14,15 +14,36 @@ struct RecordDetailView: View {
 
     var body: some View {
         List {
-            Section("Session") {
-                LabeledContent("Game", value: displayName)
-                if let year = record.yearPublished {
-                    LabeledContent("Year Published", value: "\(year)")
+            Section {
+                HStack(spacing: 14) {
+                    Image(record.game)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 72, height: 72)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(displayName)
+                            .font(.title2.weight(.bold))
+                        Text(record.date)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        HStack(spacing: 12) {
+                            Label("\(record.playerCount) players", systemImage: "person.2")
+                            if !record.variants.isEmpty {
+                                Label(record.variants.joined(separator: ", "), systemImage: "sparkles")
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
                 }
-                LabeledContent("Date", value: record.date)
-                LabeledContent("Players", value: "\(record.playerCount)")
-                if !record.variants.isEmpty {
-                    LabeledContent("Variants", value: record.variants.joined(separator: ", "))
+                .padding(.vertical, 4)
+            }
+
+            if let year = record.yearPublished {
+                Section("Details") {
+                    LabeledContent("Year Published", value: "\(year)")
                 }
             }
 
@@ -112,8 +133,6 @@ struct RecordDetailView: View {
         }
         .sheet(isPresented: $isEditing) {
             if let game = gameDefinition {
-                // The freshest copy of the record lives in userData (post-edit
-                // replaceRecord); fall back to the prop if the row isn't there.
                 let current = userData.records.first(where: { $0.id == record.id }) ?? record
                 NavigationStack {
                     CreateRecordView(game: game, editing: current)
@@ -145,8 +164,6 @@ struct RecordDetailView: View {
         if await userData.deleteRecord(id: record.id) {
             dismiss()
         }
-        // On failure, userData.errorMessage is set; the list view's
-        // empty-state ContentUnavailableView surfaces it on the next render.
     }
 
     private func orderedEndStateKeys(for player: RecordPlayer) -> [String] {

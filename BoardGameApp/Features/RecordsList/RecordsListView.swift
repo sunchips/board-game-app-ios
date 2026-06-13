@@ -39,10 +39,6 @@ struct RecordsListView: View {
                         }
                     }
 
-                    // Bottom sentinel: when the user scrolls it into view, we
-                    // ask for the next page. Hidden while a fetch is in flight
-                    // so the spinner doesn't flicker; replaced by the spinner
-                    // row during the actual load.
                     if !userData.allRecordsLoaded && selectedGame == nil {
                         HStack {
                             Spacer()
@@ -68,7 +64,11 @@ struct RecordsListView: View {
                     Button("All games") { selectedGame = nil }
                     Divider()
                     ForEach(GameCatalog.all) { g in
-                        Button(g.displayName) { selectedGame = g.slug }
+                        Button {
+                            selectedGame = g.slug
+                        } label: {
+                            Label(g.displayName, image: g.slug)
+                        }
                     }
                 } label: {
                     Label(filterLabel, systemImage: "line.3.horizontal.decrease.circle")
@@ -90,27 +90,40 @@ struct RecordsListView: View {
 private struct RecordRow: View {
     let record: GameRecord
 
+    private var gameName: String {
+        GameCatalog.find(slug: record.game)?.displayName ?? record.game
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(GameCatalog.find(slug: record.game)?.displayName ?? record.game)
-                    .font(.headline)
-                Spacer()
-                Text(record.date).font(.caption).foregroundStyle(.secondary)
-            }
-            HStack(spacing: 8) {
-                Label("\(record.playerCount)", systemImage: "person.2")
-                    .labelStyle(.titleAndIcon)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                if !record.winners.isEmpty {
-                    let winnerNames = record.winners.compactMap { idx -> String? in
-                        guard idx < record.players.count else { return nil }
-                        return record.players[idx].name
-                    }
-                    Text("Winner: \(winnerNames.joined(separator: ", "))")
+        HStack(spacing: 12) {
+            Image(record.game)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 48, height: 48)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(gameName)
+                        .font(.headline)
+                    Spacer()
+                    Text(record.date).font(.caption).foregroundStyle(.secondary)
+                }
+                HStack(spacing: 8) {
+                    Label("\(record.playerCount)", systemImage: "person.2")
+                        .labelStyle(.titleAndIcon)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    if !record.winners.isEmpty {
+                        let winnerNames = record.winners.compactMap { idx -> String? in
+                            guard idx < record.players.count else { return nil }
+                            return record.players[idx].name
+                        }
+                        Text("Winner: \(winnerNames.joined(separator: ", "))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
             }
         }
