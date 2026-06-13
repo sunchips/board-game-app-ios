@@ -195,7 +195,6 @@ enum GameCatalog {
         supportsTeams: false, supportsElimination: false,
         endStateFields: [
             .integer(key: "recipes_completed", label: "Recipes Completed", max: 3),
-            .integer(key: "coins_remaining", label: "Coins Remaining"),
         ],
     )
 
