@@ -46,8 +46,9 @@ struct GameCatalogTests {
     @Test("Games with identity enums have non-empty options")
     func identityOptionsNonEmpty() {
         let identityGames = [
-            "bunny-kingdom", "catan", "codenames", "king-of-new-york",
-            "parks", "scythe", "secret-hitler", "viticulture",
+            "bunny-kingdom", "catan", "codenames", "hibachi",
+            "king-of-new-york", "parks", "scythe", "secret-hitler",
+            "viticulture",
         ]
         for slug in identityGames {
             let g = GameCatalog.find(slug: slug)

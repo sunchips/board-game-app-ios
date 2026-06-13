@@ -191,7 +191,7 @@ enum GameCatalog {
 
     static let hibachi = GameDefinition(
         slug: "hibachi", displayName: "Hibachi", yearPublished: nil,
-        identityOptions: [],
+        identityOptions: ["black", "blue", "green", "red"],
         supportsTeams: false, supportsElimination: false,
         endStateFields: [
             .integer(key: "recipes_completed", label: "Recipes Completed", max: 3),
