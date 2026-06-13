@@ -73,6 +73,7 @@ enum GameCatalog {
         coup,
         everdell,
         hanabi,
+        hibachi,
         huesAndCues,
         jaipur,
         kingOfNewYork,
@@ -185,6 +186,16 @@ enum GameCatalog {
             .integer(key: "hint_tokens_remaining", label: "Hint Tokens Remaining", max: 8),
             .boolean(key: "perfect_score", label: "Perfect Score"),
             .boolean(key: "exploded", label: "Exploded"),
+        ],
+    )
+
+    static let hibachi = GameDefinition(
+        slug: "hibachi", displayName: "Hibachi", yearPublished: nil,
+        identityOptions: [],
+        supportsTeams: false, supportsElimination: false,
+        endStateFields: [
+            .integer(key: "recipes_completed", label: "Recipes Completed", max: 3),
+            .integer(key: "coins_remaining", label: "Coins Remaining"),
         ],
     )
 

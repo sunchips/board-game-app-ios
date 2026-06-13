@@ -8,9 +8,9 @@ struct GameCatalogTests {
     func allSlugsPresent() {
         let expected: Set<String> = [
             "bunny-kingdom", "calico", "catan", "codenames", "coup",
-            "everdell", "hanabi", "hues-and-cues", "jaipur", "king-of-new-york",
-            "parks", "petiquette", "scythe", "secret-hitler", "the-king-is-dead",
-            "viticulture", "wavelength",
+            "everdell", "hanabi", "hibachi", "hues-and-cues", "jaipur",
+            "king-of-new-york", "parks", "petiquette", "scythe",
+            "secret-hitler", "the-king-is-dead", "viticulture", "wavelength",
         ]
         let actual = Set(GameCatalog.all.map(\.slug))
         #expect(actual == expected)
