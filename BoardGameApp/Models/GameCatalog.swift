@@ -190,7 +190,7 @@ enum GameCatalog {
     )
 
     static let hibachi = GameDefinition(
-        slug: "hibachi", displayName: "Hibachi", yearPublished: nil,
+        slug: "hibachi", displayName: "Hibachi", yearPublished: 2021,
         identityOptions: ["black", "blue", "green", "red"],
         supportsTeams: false, supportsElimination: false,
         endStateFields: [
