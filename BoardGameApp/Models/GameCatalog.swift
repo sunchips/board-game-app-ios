@@ -77,6 +77,7 @@ enum GameCatalog {
         jaipur,
         kingOfNewYork,
         parks,
+        petiquette,
         scythe,
         secretHitler,
         theKingIsDead,
@@ -237,6 +238,16 @@ enum GameCatalog {
             .integer(key: "year_bonus_vp", label: "Year Bonus VP"),
             .integer(key: "canteen", label: "Canteen", max: 3),
             .integer(key: "gear", label: "Gear"),
+        ],
+    )
+
+    static let petiquette = GameDefinition(
+        slug: "petiquette", displayName: "Petiquette", yearPublished: 2025,
+        identityOptions: [],
+        supportsTeams: false, supportsElimination: false,
+        endStateFields: [
+            .integer(key: "score", label: "Score"),
+            .integer(key: "matches", label: "Matches"),
         ],
     )
 
