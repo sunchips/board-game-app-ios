@@ -55,20 +55,27 @@ struct GameDefinition: Identifiable, Hashable, Sendable {
 }
 
 enum EndStateField: Hashable, Sendable {
-    case integer(key: String, label: String, min: Int = 0, max: Int? = nil)
-    case boolean(key: String, label: String)
+    case integer(key: String, label: String, min: Int = 0, max: Int? = nil, group: String? = nil)
+    case boolean(key: String, label: String, group: String? = nil)
 
     var key: String {
         switch self {
-        case .integer(let k, _, _, _): return k
-        case .boolean(let k, _): return k
+        case .integer(let k, _, _, _, _): return k
+        case .boolean(let k, _, _): return k
         }
     }
 
     var label: String {
         switch self {
-        case .integer(_, let l, _, _): return l
-        case .boolean(_, let l): return l
+        case .integer(_, let l, _, _, _): return l
+        case .boolean(_, let l, _): return l
+        }
+    }
+
+    var group: String? {
+        switch self {
+        case .integer(_, _, _, _, let g): return g
+        case .boolean(_, _, let g): return g
         }
     }
 }
@@ -85,16 +92,25 @@ struct GameAchievement: Identifiable, Hashable, Sendable {
     }
 }
 
-enum AchievementCondition: Hashable, Sendable {
+indirect enum AchievementCondition: Hashable, Sendable {
     case integerAtLeast(key: String, value: Int)
+    case integerAtMost(key: String, value: Int)
     case booleanEquals(key: String, value: Bool)
+    case anyOf([AchievementCondition])
+    case allOf([AchievementCondition])
 
     func isMet(integers: [String: Int], booleans: [String: Bool]) -> Bool {
         switch self {
         case .integerAtLeast(let key, let value):
             return (integers[key] ?? 0) >= value
+        case .integerAtMost(let key, let value):
+            return (integers[key] ?? 0) <= value
         case .booleanEquals(let key, let value):
             return (booleans[key] ?? false) == value
+        case .anyOf(let conditions):
+            return conditions.contains { $0.isMet(integers: integers, booleans: booleans) }
+        case .allOf(let conditions):
+            return conditions.allSatisfy { $0.isMet(integers: integers, booleans: booleans) }
         }
     }
 }
@@ -166,22 +182,87 @@ enum GameCatalog {
         requiredVariantCount: 4,
         achievements: [
             GameAchievement(
-                slug: "point-collector", name: "Point Collector",
-                description: "Score 40+ points",
-                condition: .integerAtLeast(key: "score", value: 40)),
+                slug: "ach_all_conditions", name: "Jack of All Trades",
+                description: "Meet all 4 scoring conditions with 1 painting",
+                condition: .anyOf((1...3).map { n in
+                    .allOf([
+                        .booleanEquals(key: "painting_\(n)_scored", value: true),
+                        .integerAtMost(key: "painting_\(n)_silver", value: 0),
+                    ])
+                })),
             GameAchievement(
-                slug: "ribbon-hunter", name: "Ribbon Hunter",
+                slug: "ach_4_silver_painting", name: "Hidden Gem",
+                description: "Score 4+ silver ribbons with 1 painting",
+                condition: .anyOf((1...3).map { n in
+                    .integerAtLeast(key: "painting_\(n)_silver", value: 4)
+                })),
+            GameAchievement(
+                slug: "ach_7_ribbons_painting", name: "Masterpiece",
+                description: "Score 7+ ribbons with 1 painting",
+                condition: .anyOf((1...3).map { n in
+                    .integerAtLeast(key: "painting_\(n)_ribbons", value: 7)
+                })),
+            GameAchievement(
+                slug: "ach_5_same_element", name: "Elemental Master",
+                description: "Have 5 of the same element on 1 painting",
+                condition: .anyOf((1...3).flatMap { n in
+                    ["hue", "tone", "texture", "shape"].map { e in
+                        .integerAtLeast(key: "painting_\(n)_\(e)", value: 5)
+                    }
+                })),
+            GameAchievement(
+                slug: "ach_max_all_cards", name: "Critical Acclaim",
+                description: "Get max ribbons from all 4 scoring cards",
+                condition: .booleanEquals(key: "ach_max_all_cards", value: true)),
+            GameAchievement(
+                slug: "ach_7_silver", name: "Rogue Artist",
+                description: "Score 7+ silver ribbons",
+                condition: .integerAtLeast(key: "silver_ribbons", value: 7)),
+            GameAchievement(
+                slug: "ach_14_ribbons", name: "Ribbon Hunter",
                 description: "Score 14+ ribbons",
                 condition: .integerAtLeast(key: "ribbons", value: 14)),
             GameAchievement(
-                slug: "master-artist", name: "Master Artist",
+                slug: "ach_40_points", name: "Point Collector",
+                description: "Score 40+ points",
+                condition: .integerAtLeast(key: "score", value: 40)),
+            GameAchievement(
+                slug: "ach_47_points", name: "Master Artist",
                 description: "Beat the designer's top score (47)",
                 condition: .integerAtLeast(key: "score", value: 47)),
         ],
         endStateFields: [
+            // Summary
             .integer(key: "score", label: "Score"),
             .integer(key: "ribbons", label: "Ribbons"),
+            .integer(key: "silver_ribbons", label: "Silver Ribbons"),
             .integer(key: "paintings", label: "Paintings", max: 3),
+            // Painting 1
+            .boolean(key: "painting_1_scored", label: "Scored", group: "Painting 1"),
+            .integer(key: "painting_1_ribbons", label: "Ribbons", group: "Painting 1"),
+            .integer(key: "painting_1_silver", label: "Silver Ribbons", max: 4, group: "Painting 1"),
+            .integer(key: "painting_1_hue", label: "Hue", group: "Painting 1"),
+            .integer(key: "painting_1_tone", label: "Tone", group: "Painting 1"),
+            .integer(key: "painting_1_texture", label: "Texture", group: "Painting 1"),
+            .integer(key: "painting_1_shape", label: "Shape", group: "Painting 1"),
+            // Painting 2
+            .boolean(key: "painting_2_scored", label: "Scored", group: "Painting 2"),
+            .integer(key: "painting_2_ribbons", label: "Ribbons", group: "Painting 2"),
+            .integer(key: "painting_2_silver", label: "Silver Ribbons", max: 4, group: "Painting 2"),
+            .integer(key: "painting_2_hue", label: "Hue", group: "Painting 2"),
+            .integer(key: "painting_2_tone", label: "Tone", group: "Painting 2"),
+            .integer(key: "painting_2_texture", label: "Texture", group: "Painting 2"),
+            .integer(key: "painting_2_shape", label: "Shape", group: "Painting 2"),
+            // Painting 3
+            .boolean(key: "painting_3_scored", label: "Scored", group: "Painting 3"),
+            .integer(key: "painting_3_ribbons", label: "Ribbons", group: "Painting 3"),
+            .integer(key: "painting_3_silver", label: "Silver Ribbons", max: 4, group: "Painting 3"),
+            .integer(key: "painting_3_hue", label: "Hue", group: "Painting 3"),
+            .integer(key: "painting_3_tone", label: "Tone", group: "Painting 3"),
+            .integer(key: "painting_3_texture", label: "Texture", group: "Painting 3"),
+            .integer(key: "painting_3_shape", label: "Shape", group: "Painting 3"),
+            // Achievements (self-report for ones that can't be auto-detected)
+            .boolean(key: "ach_max_all_cards", label: "Max Ribbons from All 4 Cards", group: "Achievements"),
         ],
     )
 

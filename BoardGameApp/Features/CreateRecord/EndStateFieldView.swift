@@ -7,7 +7,7 @@ struct EndStateFieldView: View {
 
     var body: some View {
         switch field {
-        case let .integer(key, label, min, max):
+        case let .integer(key, label, min, max, _):
             Stepper(
                 value: Binding(
                     get: { integers[key] ?? min },
@@ -17,7 +17,7 @@ struct EndStateFieldView: View {
             ) {
                 LabeledContent(label, value: "\(integers[key] ?? min)")
             }
-        case let .boolean(key, label):
+        case let .boolean(key, label, _):
             Toggle(
                 label,
                 isOn: Binding(

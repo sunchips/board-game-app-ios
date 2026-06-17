@@ -4,6 +4,19 @@ struct PlayerEditorView: View {
     @Binding var entry: PlayerEntry
     let game: GameDefinition
 
+    private var ungroupedFields: [EndStateField] {
+        game.endStateFields.filter { $0.group == nil }
+    }
+
+    private var fieldGroupNames: [String] {
+        var seen = Set<String>()
+        return game.endStateFields.compactMap { $0.group }.filter { seen.insert($0).inserted }
+    }
+
+    private func fields(inGroup name: String) -> [EndStateField] {
+        game.endStateFields.filter { $0.group == name }
+    }
+
     var body: some View {
         DisclosureGroup(entry.name.isEmpty ? "New Player" : entry.name) {
             TextField("Name", text: $entry.name)
@@ -32,11 +45,16 @@ struct PlayerEditorView: View {
                 Toggle("Eliminated", isOn: $entry.eliminated)
             }
 
-            // Cooperative games share one end state across the whole table —
-            // it's edited in the form's Team Result section, not per-player.
             if !game.isCooperative {
-                ForEach(game.endStateFields, id: \.key) { field in
+                ForEach(ungroupedFields, id: \.key) { field in
                     EndStateFieldView(field: field, integers: $entry.integers, booleans: $entry.booleans)
+                }
+                ForEach(fieldGroupNames, id: \.self) { groupName in
+                    DisclosureGroup(groupName) {
+                        ForEach(fields(inGroup: groupName), id: \.key) { field in
+                            EndStateFieldView(field: field, integers: $entry.integers, booleans: $entry.booleans)
+                        }
+                    }
                 }
             }
         }

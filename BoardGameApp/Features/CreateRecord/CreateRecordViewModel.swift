@@ -35,8 +35,8 @@ final class CreateRecordViewModel {
         var bools: [String: Bool] = [:]
         for field in game.endStateFields {
             switch field {
-            case .integer(let key, _, let min, _): ints[key] = min
-            case .boolean(let key, _): bools[key] = false
+            case .integer(let key, _, let min, _, _): ints[key] = min
+            case .boolean(let key, _, _): bools[key] = false
             }
         }
         self.teamIntegers = ints
@@ -55,9 +55,9 @@ final class CreateRecordViewModel {
             if game.isCooperative, let firstPlayer = editing.players.first {
                 for field in game.endStateFields {
                     switch field {
-                    case .integer(let key, _, _, _):
+                    case .integer(let key, _, _, _, _):
                         if case .integer(let v) = firstPlayer.endState[key] { self.teamIntegers[key] = v }
-                    case .boolean(let key, _):
+                    case .boolean(let key, _, _):
                         if case .boolean(let v) = firstPlayer.endState[key] { self.teamBooleans[key] = v }
                     }
                 }
@@ -133,9 +133,8 @@ final class CreateRecordViewModel {
     /// can be unit-tested without standing up an APIClient. `submit()` is the
     /// only production caller.
     func buildDraft() -> RecordDraft {
+        autoDetectAchievements()
         let playerDrafts = players.map { entry -> PlayerDraft in
-            // Cooperative: stamp the shared team end-state onto every player
-            // at submit time. The UI only exposes one input per field.
             guard game.isCooperative else { return entry.toDraft(game: game) }
             var copy = entry
             copy.integers = teamIntegers
@@ -152,6 +151,17 @@ final class CreateRecordViewModel {
             notes: notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : notes,
             players: playerDrafts,
         )
+    }
+
+    private func autoDetectAchievements() {
+        guard !game.achievements.isEmpty else { return }
+        for i in players.indices {
+            for achievement in game.achievements {
+                if achievement.isMet(integers: players[i].integers, booleans: players[i].booleans) {
+                    players[i].booleans[achievement.slug] = true
+                }
+            }
+        }
     }
 
     func submit() async {
@@ -205,8 +215,8 @@ struct PlayerEntry: Identifiable, Hashable {
         var booleans: [String: Bool] = [:]
         for field in game.endStateFields {
             switch field {
-            case .integer(let key, _, let min, _): integers[key] = min
-            case .boolean(let key, _): booleans[key] = false
+            case .integer(let key, _, let min, _, _): integers[key] = min
+            case .boolean(let key, _, _): booleans[key] = false
             }
         }
         return PlayerEntry(integers: integers, booleans: booleans)
@@ -245,9 +255,9 @@ struct PlayerEntry: Identifiable, Hashable {
         var endState: [String: EndStateValue] = [:]
         for field in game.endStateFields {
             switch field {
-            case .integer(let key, _, _, _):
+            case .integer(let key, _, _, _, _):
                 endState[key] = .integer(integers[key] ?? 0)
-            case .boolean(let key, _):
+            case .boolean(let key, _, _):
                 endState[key] = .boolean(booleans[key] ?? false)
             }
         }

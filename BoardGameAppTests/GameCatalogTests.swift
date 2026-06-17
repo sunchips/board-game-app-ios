@@ -103,15 +103,33 @@ struct GameCatalogTests {
     @Test("Canvas achievements detect from end-state values")
     func canvasAchievementDetection() {
         let canvas = GameCatalog.find(slug: "canvas")!
-        let pointCollector = canvas.achievements.first { $0.slug == "point-collector" }!
-        let ribbonHunter = canvas.achievements.first { $0.slug == "ribbon-hunter" }!
-        let masterArtist = canvas.achievements.first { $0.slug == "master-artist" }!
+        let find = { (slug: String) in canvas.achievements.first { $0.slug == slug }! }
 
-        #expect(pointCollector.isMet(integers: ["score": 40], booleans: [:]))
-        #expect(!pointCollector.isMet(integers: ["score": 39], booleans: [:]))
-        #expect(ribbonHunter.isMet(integers: ["ribbons": 14], booleans: [:]))
-        #expect(!ribbonHunter.isMet(integers: ["ribbons": 13], booleans: [:]))
-        #expect(masterArtist.isMet(integers: ["score": 47], booleans: [:]))
-        #expect(!masterArtist.isMet(integers: ["score": 46], booleans: [:]))
+        // Score-based
+        #expect(find("ach_40_points").isMet(integers: ["score": 40], booleans: [:]))
+        #expect(!find("ach_40_points").isMet(integers: ["score": 39], booleans: [:]))
+        #expect(find("ach_47_points").isMet(integers: ["score": 47], booleans: [:]))
+        #expect(!find("ach_47_points").isMet(integers: ["score": 46], booleans: [:]))
+        #expect(find("ach_14_ribbons").isMet(integers: ["ribbons": 14], booleans: [:]))
+        #expect(!find("ach_14_ribbons").isMet(integers: ["ribbons": 13], booleans: [:]))
+        #expect(find("ach_7_silver").isMet(integers: ["silver_ribbons": 7], booleans: [:]))
+
+        // Per-painting: 7+ ribbons on 1 painting
+        #expect(find("ach_7_ribbons_painting").isMet(integers: ["painting_2_ribbons": 7], booleans: [:]))
+        #expect(!find("ach_7_ribbons_painting").isMet(integers: ["painting_2_ribbons": 6], booleans: [:]))
+
+        // Per-painting: 5 of same element
+        #expect(find("ach_5_same_element").isMet(integers: ["painting_1_hue": 5], booleans: [:]))
+        #expect(!find("ach_5_same_element").isMet(integers: ["painting_1_hue": 4], booleans: [:]))
+
+        // Per-painting: all 4 conditions met (scored + 0 silver)
+        #expect(find("ach_all_conditions").isMet(
+            integers: ["painting_1_silver": 0], booleans: ["painting_1_scored": true]))
+        #expect(!find("ach_all_conditions").isMet(
+            integers: ["painting_1_silver": 1], booleans: ["painting_1_scored": true]))
+
+        // Self-reported achievement reads its own boolean
+        #expect(find("ach_max_all_cards").isMet(integers: [:], booleans: ["ach_max_all_cards": true]))
+        #expect(!find("ach_max_all_cards").isMet(integers: [:], booleans: [:]))
     }
 }
