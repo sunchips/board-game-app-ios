@@ -101,6 +101,49 @@ struct CreateRecordViewModelTests {
         #expect(draft.players[1].savedPlayerID == nil)
     }
 
+    @Test("Canvas requires 4 variants to submit")
+    func canvasVariantValidation() {
+        let canvas = GameCatalog.find(slug: "canvas")!
+        let model = CreateRecordViewModel(game: canvas)
+        model.addPlayer()
+        model.players[0].name = "Alex"
+        model.winnerIndexes = [0]
+
+        #expect(!model.canSubmit)
+
+        model.selectedVariants = ["emphasis", "hierarchy", "proximity", "variety"]
+        #expect(model.canSubmit)
+
+        let draft = model.buildDraft()
+        #expect(draft.variants == ["emphasis", "hierarchy", "proximity", "variety"])
+    }
+
+    @Test("Editing a Canvas record seeds selected variants")
+    func editingSeedsVariants() {
+        let canvas = GameCatalog.find(slug: "canvas")!
+        let existing = GameRecord(
+            id: UUID(),
+            game: "canvas",
+            yearPublished: 2021,
+            variants: ["emphasis", "hierarchy", "proximity", "variety"],
+            date: "2026-06-15",
+            playerCount: 1,
+            winners: [0],
+            notes: nil,
+            players: [
+                RecordPlayer(
+                    name: "Alex", email: nil, identity: nil,
+                    team: nil, eliminated: nil,
+                    endState: ["score": .integer(20)],
+                    savedPlayerID: nil,
+                ),
+            ],
+            createdAt: Date(),
+        )
+        let model = CreateRecordViewModel(game: canvas, editing: existing)
+        #expect(model.selectedVariants == ["emphasis", "hierarchy", "proximity", "variety"])
+    }
+
     @Test("Competitive games keep per-player end state")
     func competitiveKeepsPerPlayerEndState() {
         let catan = GameCatalog.find(slug: "catan")!

@@ -48,6 +48,28 @@ struct CreateRecordView: View {
                 }
             }
 
+            if !model.game.variantOptions.isEmpty {
+                Section {
+                    ForEach(model.game.variantOptions, id: \.self) { variant in
+                        Toggle(isOn: Binding(
+                            get: { model.selectedVariants.contains(variant) },
+                            set: { on in
+                                if on { model.selectedVariants.insert(variant) } else { model.selectedVariants.remove(variant) }
+                            },
+                        )) {
+                            Text(variant.capitalized)
+                        }
+                        .disabled(!model.selectedVariants.contains(variant) && model.game.requiredVariantCount != nil && model.selectedVariants.count >= model.game.requiredVariantCount!)
+                    }
+                } header: {
+                    if let count = model.game.requiredVariantCount {
+                        Text("Scoring Criteria (\(model.selectedVariants.count)/\(count))")
+                    } else {
+                        Text("Variants")
+                    }
+                }
+            }
+
             if model.game.isCooperative && !model.game.endStateFields.isEmpty {
                 Section("Team Result") {
                     ForEach(model.game.endStateFields, id: \.key) { field in

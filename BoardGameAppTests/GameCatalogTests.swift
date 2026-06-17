@@ -76,4 +76,19 @@ struct GameCatalogTests {
         let coopSlugs = Set(GameCatalog.all.filter(\.isCooperative).map(\.slug))
         #expect(coopSlugs == ["hanabi"])
     }
+
+    @Test("Canvas requires exactly 4 scoring criteria")
+    func canvasVariants() {
+        let canvas = GameCatalog.find(slug: "canvas")
+        #expect(canvas?.variantOptions.count == 12)
+        #expect(canvas?.requiredVariantCount == 4)
+    }
+
+    @Test("Variant options are unique within a game")
+    func variantOptionsUnique() {
+        for game in GameCatalog.all {
+            let opts = game.variantOptions
+            #expect(Set(opts).count == opts.count, "\(game.slug) has duplicate variant options")
+        }
+    }
 }

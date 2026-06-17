@@ -10,6 +10,7 @@ final class CreateRecordViewModel {
     var notes: String = ""
     var players: [PlayerEntry]
     var winnerIndexes: Set<Int> = []
+    var selectedVariants: Set<String> = []
 
     /// Cooperative games share an end state — everyone scores the same. These
     /// hold the shared values; at submit time they're stamped onto every
@@ -46,6 +47,7 @@ final class CreateRecordViewModel {
             self.date = Self.dateFormatter.date(from: editing.date) ?? .now
             self.players = editing.players.map { PlayerEntry.from(player: $0, game: game) }
             self.winnerIndexes = Set(editing.winners)
+            self.selectedVariants = Set(editing.variants)
             // Cooperative: the per-player end_states are all identical (we
             // stamp from teamIntegers/teamBooleans at create time). Seed the
             // team fields from the first player so the Team Result section
@@ -69,11 +71,9 @@ final class CreateRecordViewModel {
         !isSubmitting &&
             players.count >= 1 &&
             players.allSatisfy { !$0.name.trimmingCharacters(in: .whitespaces).isEmpty } &&
-            // Cooperative games are all-or-nothing: an empty winnerIndexes set
-            // encodes a team loss, which is a valid record. Competitive games
-            // still require at least one winner.
             (game.isCooperative || !winnerIndexes.isEmpty) &&
-            winnerIndexes.allSatisfy { $0 < players.count }
+            winnerIndexes.allSatisfy { $0 < players.count } &&
+            (game.requiredVariantCount == nil || selectedVariants.count == game.requiredVariantCount)
     }
 
     /// Coop-only convenience: mirror of `winnerIndexes` as a single Bool.
@@ -144,7 +144,7 @@ final class CreateRecordViewModel {
         }
         return RecordDraft(
             game: game.slug,
-            variants: [],
+            variants: selectedVariants.sorted(),
             yearPublished: game.yearPublished,
             date: Self.dateFormatter.string(from: date),
             playerCount: players.count,

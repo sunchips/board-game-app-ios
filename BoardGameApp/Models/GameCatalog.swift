@@ -22,6 +22,8 @@ struct GameDefinition: Identifiable, Hashable, Sendable {
     /// shows a single "Team won this game" toggle instead of a per-player
     /// winner picker — `winners` is conventionally all-or-nothing.
     let isCooperative: Bool
+    let variantOptions: [String]
+    let requiredVariantCount: Int?
     let endStateFields: [EndStateField]
 
     init(
@@ -32,6 +34,8 @@ struct GameDefinition: Identifiable, Hashable, Sendable {
         supportsTeams: Bool,
         supportsElimination: Bool,
         isCooperative: Bool = false,
+        variantOptions: [String] = [],
+        requiredVariantCount: Int? = nil,
         endStateFields: [EndStateField],
     ) {
         self.slug = slug
@@ -41,6 +45,8 @@ struct GameDefinition: Identifiable, Hashable, Sendable {
         self.supportsTeams = supportsTeams
         self.supportsElimination = supportsElimination
         self.isCooperative = isCooperative
+        self.variantOptions = variantOptions
+        self.requiredVariantCount = requiredVariantCount
         self.endStateFields = endStateFields
     }
 }
@@ -123,6 +129,12 @@ enum GameCatalog {
         slug: "canvas", displayName: "Canvas", yearPublished: 2021,
         identityOptions: [],
         supportsTeams: false, supportsElimination: false,
+        variantOptions: [
+            "composition", "consistency", "emphasis", "hierarchy",
+            "movement", "proportion", "proximity", "repetition",
+            "space", "style", "symmetry", "variety",
+        ],
+        requiredVariantCount: 4,
         endStateFields: [
             .integer(key: "score", label: "Score"),
             .integer(key: "ribbons", label: "Ribbons"),
