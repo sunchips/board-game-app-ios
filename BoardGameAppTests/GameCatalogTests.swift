@@ -91,4 +91,27 @@ struct GameCatalogTests {
             #expect(Set(opts).count == opts.count, "\(game.slug) has duplicate variant options")
         }
     }
+
+    @Test("Achievement slugs are unique within a game")
+    func achievementSlugsUnique() {
+        for game in GameCatalog.all {
+            let slugs = game.achievements.map(\.slug)
+            #expect(Set(slugs).count == slugs.count, "\(game.slug) has duplicate achievement slugs")
+        }
+    }
+
+    @Test("Canvas achievements detect from end-state values")
+    func canvasAchievementDetection() {
+        let canvas = GameCatalog.find(slug: "canvas")!
+        let pointCollector = canvas.achievements.first { $0.slug == "point-collector" }!
+        let ribbonHunter = canvas.achievements.first { $0.slug == "ribbon-hunter" }!
+        let masterArtist = canvas.achievements.first { $0.slug == "master-artist" }!
+
+        #expect(pointCollector.isMet(integers: ["score": 40], booleans: [:]))
+        #expect(!pointCollector.isMet(integers: ["score": 39], booleans: [:]))
+        #expect(ribbonHunter.isMet(integers: ["ribbons": 14], booleans: [:]))
+        #expect(!ribbonHunter.isMet(integers: ["ribbons": 13], booleans: [:]))
+        #expect(masterArtist.isMet(integers: ["score": 47], booleans: [:]))
+        #expect(!masterArtist.isMet(integers: ["score": 46], booleans: [:]))
+    }
 }

@@ -24,6 +24,7 @@ struct GameDefinition: Identifiable, Hashable, Sendable {
     let isCooperative: Bool
     let variantOptions: [String]
     let requiredVariantCount: Int?
+    let achievements: [GameAchievement]
     let endStateFields: [EndStateField]
 
     init(
@@ -36,6 +37,7 @@ struct GameDefinition: Identifiable, Hashable, Sendable {
         isCooperative: Bool = false,
         variantOptions: [String] = [],
         requiredVariantCount: Int? = nil,
+        achievements: [GameAchievement] = [],
         endStateFields: [EndStateField],
     ) {
         self.slug = slug
@@ -47,6 +49,7 @@ struct GameDefinition: Identifiable, Hashable, Sendable {
         self.isCooperative = isCooperative
         self.variantOptions = variantOptions
         self.requiredVariantCount = requiredVariantCount
+        self.achievements = achievements
         self.endStateFields = endStateFields
     }
 }
@@ -66,6 +69,32 @@ enum EndStateField: Hashable, Sendable {
         switch self {
         case .integer(_, let l, _, _): return l
         case .boolean(_, let l): return l
+        }
+    }
+}
+
+struct GameAchievement: Identifiable, Hashable, Sendable {
+    var id: String { slug }
+    let slug: String
+    let name: String
+    let description: String
+    let condition: AchievementCondition
+
+    func isMet(integers: [String: Int], booleans: [String: Bool]) -> Bool {
+        condition.isMet(integers: integers, booleans: booleans)
+    }
+}
+
+enum AchievementCondition: Hashable, Sendable {
+    case integerAtLeast(key: String, value: Int)
+    case booleanEquals(key: String, value: Bool)
+
+    func isMet(integers: [String: Int], booleans: [String: Bool]) -> Bool {
+        switch self {
+        case .integerAtLeast(let key, let value):
+            return (integers[key] ?? 0) >= value
+        case .booleanEquals(let key, let value):
+            return (booleans[key] ?? false) == value
         }
     }
 }
@@ -135,6 +164,20 @@ enum GameCatalog {
             "space", "style", "symmetry", "variety",
         ],
         requiredVariantCount: 4,
+        achievements: [
+            GameAchievement(
+                slug: "point-collector", name: "Point Collector",
+                description: "Score 40+ points",
+                condition: .integerAtLeast(key: "score", value: 40)),
+            GameAchievement(
+                slug: "ribbon-hunter", name: "Ribbon Hunter",
+                description: "Score 14+ ribbons",
+                condition: .integerAtLeast(key: "ribbons", value: 14)),
+            GameAchievement(
+                slug: "master-artist", name: "Master Artist",
+                description: "Beat the designer's top score (47)",
+                condition: .integerAtLeast(key: "score", value: 47)),
+        ],
         endStateFields: [
             .integer(key: "score", label: "Score"),
             .integer(key: "ribbons", label: "Ribbons"),

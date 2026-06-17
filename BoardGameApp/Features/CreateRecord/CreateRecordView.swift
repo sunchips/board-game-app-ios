@@ -3,6 +3,8 @@ import SwiftUI
 struct CreateRecordView: View {
     @State private var model: CreateRecordViewModel
     @State private var showingRoster = false
+    @State private var earnedAchievements: [(playerName: String, achievement: GameAchievement)] = []
+    @State private var showingAchievements = false
     @Environment(\.dismiss) private var dismiss
     @Environment(UserDataStore.self) private var userData
 
@@ -138,16 +140,25 @@ struct CreateRecordView: View {
                 } else {
                     userData.prependRecord(record)
                 }
-                // Manual player entries get auto-rostered server-side; pull the
-                // refreshed list so the new entries show up immediately.
                 Task { await userData.refreshPlayers() }
-                dismiss()
+
+                let achieved = AchievementsRevealView.check(
+                    game: model.game, players: model.players)
+                if achieved.isEmpty {
+                    dismiss()
+                } else {
+                    earnedAchievements = achieved
+                    showingAchievements = true
+                }
             }
         }
         .sheet(isPresented: $showingRoster) {
             RosterPickerSheet(alreadyPickedIDs: model.pickedSavedPlayerIDs) { picked in
                 model.addPlayers(from: picked)
             }
+        }
+        .sheet(isPresented: $showingAchievements, onDismiss: { dismiss() }) {
+            AchievementsRevealView(earnedAchievements: earnedAchievements)
         }
     }
 }
