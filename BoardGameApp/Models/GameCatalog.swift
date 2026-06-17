@@ -68,6 +68,7 @@ enum GameCatalog {
     static let all: [GameDefinition] = [
         bunnyKingdom,
         calico,
+        canvas,
         catan,
         codenames,
         coup,
@@ -115,6 +116,17 @@ enum GameCatalog {
             .integer(key: "cats_vp", label: "Cats VP"),
             .integer(key: "buttons_vp", label: "Buttons VP"),
             .integer(key: "design_goal_vp", label: "Design Goal VP"),
+        ],
+    )
+
+    static let canvas = GameDefinition(
+        slug: "canvas", displayName: "Canvas", yearPublished: 2021,
+        identityOptions: [],
+        supportsTeams: false, supportsElimination: false,
+        endStateFields: [
+            .integer(key: "score", label: "Score"),
+            .integer(key: "ribbons", label: "Ribbons"),
+            .integer(key: "paintings", label: "Paintings", max: 3),
         ],
     )
 

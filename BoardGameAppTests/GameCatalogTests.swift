@@ -7,7 +7,7 @@ struct GameCatalogTests {
     @Test("Every expected slug is present")
     func allSlugsPresent() {
         let expected: Set<String> = [
-            "bunny-kingdom", "calico", "catan", "codenames", "coup",
+            "bunny-kingdom", "calico", "canvas", "catan", "codenames", "coup",
             "everdell", "hanabi", "hibachi", "hues-and-cues", "jaipur",
             "king-of-new-york", "parks", "petiquette", "scythe",
             "secret-hitler", "the-king-is-dead", "viticulture", "wavelength",
