@@ -95,6 +95,7 @@ struct GameAchievement: Identifiable, Hashable, Sendable {
 indirect enum AchievementCondition: Hashable, Sendable {
     case integerAtLeast(key: String, value: Int)
     case integerAtMost(key: String, value: Int)
+    case sumAtLeast(keys: [String], value: Int)
     case booleanEquals(key: String, value: Bool)
     case anyOf([AchievementCondition])
     case allOf([AchievementCondition])
@@ -105,6 +106,8 @@ indirect enum AchievementCondition: Hashable, Sendable {
             return (integers[key] ?? 0) >= value
         case .integerAtMost(let key, let value):
             return (integers[key] ?? 0) <= value
+        case .sumAtLeast(let keys, let value):
+            return keys.reduce(0) { $0 + (integers[$1] ?? 0) } >= value
         case .booleanEquals(let key, let value):
             return (booleans[key] ?? false) == value
         case .anyOf(let conditions):
@@ -200,7 +203,7 @@ enum GameCatalog {
                 slug: "ach_7_ribbons_painting", name: "Masterpiece",
                 description: "Score 7+ ribbons with 1 painting",
                 condition: .anyOf((1...3).map { n in
-                    .integerAtLeast(key: "painting_\(n)_ribbons", value: 7)
+                    .sumAtLeast(keys: ["painting_\(n)_red", "painting_\(n)_green", "painting_\(n)_blue", "painting_\(n)_purple"], value: 7)
                 })),
             GameAchievement(
                 slug: "ach_5_same_element", name: "Elemental Master",
@@ -221,7 +224,7 @@ enum GameCatalog {
             GameAchievement(
                 slug: "ach_14_ribbons", name: "Ribbon Hunter",
                 description: "Score 14+ ribbons",
-                condition: .integerAtLeast(key: "ribbons", value: 14)),
+                condition: .sumAtLeast(keys: ["red_ribbons", "green_ribbons", "blue_ribbons", "purple_ribbons"], value: 14)),
             GameAchievement(
                 slug: "ach_40_points", name: "Point Collector",
                 description: "Score 40+ points",
@@ -234,29 +237,41 @@ enum GameCatalog {
         endStateFields: [
             // Summary
             .integer(key: "score", label: "Score"),
-            .integer(key: "ribbons", label: "Ribbons"),
+            .integer(key: "red_ribbons", label: "Red Ribbons"),
+            .integer(key: "green_ribbons", label: "Green Ribbons"),
+            .integer(key: "blue_ribbons", label: "Blue Ribbons"),
+            .integer(key: "purple_ribbons", label: "Purple Ribbons"),
             .integer(key: "silver_ribbons", label: "Silver Ribbons"),
             .integer(key: "paintings", label: "Paintings", max: 3),
             // Painting 1
             .boolean(key: "painting_1_scored", label: "Scored", group: "Painting 1"),
-            .integer(key: "painting_1_ribbons", label: "Ribbons", group: "Painting 1"),
-            .integer(key: "painting_1_silver", label: "Silver Ribbons", max: 4, group: "Painting 1"),
+            .integer(key: "painting_1_red", label: "Red", group: "Painting 1"),
+            .integer(key: "painting_1_green", label: "Green", group: "Painting 1"),
+            .integer(key: "painting_1_blue", label: "Blue", group: "Painting 1"),
+            .integer(key: "painting_1_purple", label: "Purple", group: "Painting 1"),
+            .integer(key: "painting_1_silver", label: "Silver", max: 4, group: "Painting 1"),
             .integer(key: "painting_1_hue", label: "Hue", group: "Painting 1"),
             .integer(key: "painting_1_tone", label: "Tone", group: "Painting 1"),
             .integer(key: "painting_1_texture", label: "Texture", group: "Painting 1"),
             .integer(key: "painting_1_shape", label: "Shape", group: "Painting 1"),
             // Painting 2
             .boolean(key: "painting_2_scored", label: "Scored", group: "Painting 2"),
-            .integer(key: "painting_2_ribbons", label: "Ribbons", group: "Painting 2"),
-            .integer(key: "painting_2_silver", label: "Silver Ribbons", max: 4, group: "Painting 2"),
+            .integer(key: "painting_2_red", label: "Red", group: "Painting 2"),
+            .integer(key: "painting_2_green", label: "Green", group: "Painting 2"),
+            .integer(key: "painting_2_blue", label: "Blue", group: "Painting 2"),
+            .integer(key: "painting_2_purple", label: "Purple", group: "Painting 2"),
+            .integer(key: "painting_2_silver", label: "Silver", max: 4, group: "Painting 2"),
             .integer(key: "painting_2_hue", label: "Hue", group: "Painting 2"),
             .integer(key: "painting_2_tone", label: "Tone", group: "Painting 2"),
             .integer(key: "painting_2_texture", label: "Texture", group: "Painting 2"),
             .integer(key: "painting_2_shape", label: "Shape", group: "Painting 2"),
             // Painting 3
             .boolean(key: "painting_3_scored", label: "Scored", group: "Painting 3"),
-            .integer(key: "painting_3_ribbons", label: "Ribbons", group: "Painting 3"),
-            .integer(key: "painting_3_silver", label: "Silver Ribbons", max: 4, group: "Painting 3"),
+            .integer(key: "painting_3_red", label: "Red", group: "Painting 3"),
+            .integer(key: "painting_3_green", label: "Green", group: "Painting 3"),
+            .integer(key: "painting_3_blue", label: "Blue", group: "Painting 3"),
+            .integer(key: "painting_3_purple", label: "Purple", group: "Painting 3"),
+            .integer(key: "painting_3_silver", label: "Silver", max: 4, group: "Painting 3"),
             .integer(key: "painting_3_hue", label: "Hue", group: "Painting 3"),
             .integer(key: "painting_3_tone", label: "Tone", group: "Painting 3"),
             .integer(key: "painting_3_texture", label: "Texture", group: "Painting 3"),

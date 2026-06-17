@@ -110,13 +110,13 @@ struct GameCatalogTests {
         #expect(!find("ach_40_points").isMet(integers: ["score": 39], booleans: [:]))
         #expect(find("ach_47_points").isMet(integers: ["score": 47], booleans: [:]))
         #expect(!find("ach_47_points").isMet(integers: ["score": 46], booleans: [:]))
-        #expect(find("ach_14_ribbons").isMet(integers: ["ribbons": 14], booleans: [:]))
-        #expect(!find("ach_14_ribbons").isMet(integers: ["ribbons": 13], booleans: [:]))
+        #expect(find("ach_14_ribbons").isMet(integers: ["red_ribbons": 5, "green_ribbons": 4, "blue_ribbons": 3, "purple_ribbons": 2], booleans: [:]))
+        #expect(!find("ach_14_ribbons").isMet(integers: ["red_ribbons": 5, "green_ribbons": 4, "blue_ribbons": 3, "purple_ribbons": 1], booleans: [:]))
         #expect(find("ach_7_silver").isMet(integers: ["silver_ribbons": 7], booleans: [:]))
 
-        // Per-painting: 7+ ribbons on 1 painting
-        #expect(find("ach_7_ribbons_painting").isMet(integers: ["painting_2_ribbons": 7], booleans: [:]))
-        #expect(!find("ach_7_ribbons_painting").isMet(integers: ["painting_2_ribbons": 6], booleans: [:]))
+        // Per-painting: 7+ ribbons on 1 painting (sum of colored ribbons)
+        #expect(find("ach_7_ribbons_painting").isMet(integers: ["painting_2_red": 2, "painting_2_green": 2, "painting_2_blue": 2, "painting_2_purple": 1], booleans: [:]))
+        #expect(!find("ach_7_ribbons_painting").isMet(integers: ["painting_2_red": 2, "painting_2_green": 2, "painting_2_blue": 1, "painting_2_purple": 1], booleans: [:]))
 
         // Per-painting: 5 of same element
         #expect(find("ach_5_same_element").isMet(integers: ["painting_1_hue": 5], booleans: [:]))
