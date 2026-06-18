@@ -81,12 +81,14 @@ def make_solid_background(size: int, color: str) -> Image.Image:
 def make_square(img: Image.Image, size: int, cfg: dict) -> Image.Image:
     w, h = img.size
 
-    # --- Background ---
+    # --- Background / border layer ---
     bg_color = cfg.get("bg_color")
     if bg_color:
-        canvas = make_solid_background(size, bg_color)
+        border_layer = make_solid_background(size, bg_color)
     else:
-        canvas = make_blur_background(img, size, cfg)
+        border_layer = make_blur_background(img, size, cfg)
+
+    canvas = border_layer.copy()
 
     # --- Foreground ---
     fg_scale = cfg.get("fg_scale", FOREGROUND_SCALE)
@@ -98,6 +100,14 @@ def make_square(img: Image.Image, size: int, cfg: dict) -> Image.Image:
     x = (size - fg_w) // 2
     y = (size - fg_h) // 2
     canvas.paste(fg, (x, y))
+
+    # --- Ensure border is always on top ---
+    if fg_scale > FOREGROUND_SCALE:
+        border_px = int(size * (1 - FOREGROUND_SCALE) / 2)
+        mask = Image.new("L", (size, size), 255)
+        inner = Image.new("L", (size - 2 * border_px, size - 2 * border_px), 0)
+        mask.paste(inner, (border_px, border_px))
+        canvas.paste(border_layer, mask=mask)
 
     return canvas
 
