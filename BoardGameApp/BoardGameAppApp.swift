@@ -3,12 +3,14 @@ import SwiftUI
 @main
 struct BoardGameAppApp: App {
     @State private var auth = AuthStore()
+    @State private var draftStore = DraftStore()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(auth)
                 .environment(auth.userData)
+                .environment(draftStore)
         }
     }
 }
@@ -49,4 +51,5 @@ private struct SignedInTabs: View {
     return RootView()
         .environment(auth)
         .environment(auth.userData)
+        .environment(DraftStore())
 }
