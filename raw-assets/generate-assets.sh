@@ -5,15 +5,17 @@
 # The game picker grid cards are ~170pt wide (square), so:
 #   1x = 170px, 2x = 340px, 3x = 510px
 #
-# Each raw image is center-cropped to a square, then resized to all three scales.
+# Square images are resized directly.
+# Non-square images get a blurred version of themselves as background,
+# with the original image centered on the square canvas.
 
 set -euo pipefail
 cd "$(dirname "$0")"
 
 ASSETS_DIR="../BoardGameApp/Assets.xcassets/Games"
-SIZE_1X=170
-SIZE_2X=340
 SIZE_3X=510
+
+SCRIPT_DIR="$(pwd)"
 
 for raw in *.jpg *.png; do
     [ -f "$raw" ] || continue
@@ -27,36 +29,21 @@ for raw in *.jpg *.png; do
 
     echo "Processing $slug..."
 
-    # Get dimensions
-    w=$(sips -g pixelWidth "$raw" | awk '/pixelWidth/{print $2}')
-    h=$(sips -g pixelHeight "$raw" | awk '/pixelHeight/{print $2}')
+    # Generate the 3x square image (510x510) using Python
+    # Python handles both square (center-crop) and non-square (blur background)
+    tmp="/tmp/${slug}_square_3x.png"
+    python3 "$SCRIPT_DIR/make_square.py" "$raw" "$tmp" "$SIZE_3X"
 
-    # Center-crop to square (use the smaller dimension)
-    if [ "$w" -gt "$h" ]; then
-        crop_size=$h
-        offset_x=$(( (w - h) / 2 ))
-        offset_y=0
-    else
-        crop_size=$w
-        offset_x=0
-        offset_y=$(( (h - w) / 2 ))
-    fi
+    # Generate 2x and 1x by downscaling from 3x
+    out_3x="$imageset/${slug}@3x.png"
+    out_2x="$imageset/${slug}@2x.png"
+    out_1x="$imageset/${slug}.png"
 
-    # Create temp square crop
-    tmp="/tmp/${slug}_square.png"
-    sips -c "$crop_size" "$crop_size" --cropOffset "$offset_y" "$offset_x" "$raw" --out "$tmp" > /dev/null 2>&1
+    cp "$tmp" "$out_3x"
+    sips -z 340 340 "$tmp" --out "$out_2x" > /dev/null 2>&1
+    sips -z 170 170 "$tmp" --out "$out_1x" > /dev/null 2>&1
 
-    # Generate each scale
-    for scale in 1 2 3; do
-        case $scale in
-            1) size=$SIZE_1X; suffix="" ;;
-            2) size=$SIZE_2X; suffix="@2x" ;;
-            3) size=$SIZE_3X; suffix="@3x" ;;
-        esac
-        out="$imageset/${slug}${suffix}.png"
-        sips -z "$size" "$size" "$tmp" --out "$out" > /dev/null 2>&1
-        echo "  ${scale}x: ${size}px → $(basename "$out")"
-    done
+    echo "  1x: 170px, 2x: 340px, 3x: 510px"
 
     # Update Contents.json
     cat > "$imageset/Contents.json" << EOJSON
@@ -85,7 +72,7 @@ for raw in *.jpg *.png; do
 }
 EOJSON
 
-    # Remove the old single image.png if it exists and isn't one of our generated files
+    # Remove the old single image.png if it exists
     old="$imageset/image.png"
     if [ -f "$old" ] && [ "$(basename "$old")" = "image.png" ]; then
         rm "$old"
