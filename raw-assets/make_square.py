@@ -21,12 +21,16 @@ FOREGROUND_SCALE = 0.88   # foreground occupies 88% of the canvas
 # Per-game overrides
 #
 # Keys are the slug (filename without extension).  Supported fields:
-#   bg_color:   hex color string — use a solid color instead of blur
-#   fg_scale:   override FOREGROUND_SCALE for this game
+#   bg_color:      hex color string — use a solid color instead of blur
+#   fg_scale:      override FOREGROUND_SCALE for this game
 #   bg_brightness: override BG_BRIGHTNESS
 #   blur_radius:   override BLUR_RADIUS
 # ---------------------------------------------------------------------------
-GAME_CONFIG = {}
+GAME_CONFIG = {
+    "petiquette": {
+        "fg_scale": 1.40,
+    },
+}
 
 
 # ---------------------------------------------------------------------------
