@@ -1,65 +1,94 @@
-"""Make a square image from any aspect ratio.
+"""Generate square game-cover assets with a blurred background.
 
-Square inputs:  center-crop to the target size.
-Non-square:     fill a square canvas with a heavily blurred, scaled-up
-                copy of the source, then overlay the original centered
-                and scaled to fit (with a small margin).
+Every raw image is composited onto a square canvas:
+  1. A background is created (blurred copy of the source, or a solid color).
+  2. The original image is scaled to fit and centered on top.
 
-The blur-background technique matches what Instagram / Spotify use for
-non-square cover art.
+Per-game overrides live in GAME_CONFIG below.
 """
 
 import sys
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFilter, ImageEnhance
 
-ASPECT_TOLERANCE = 0.03  # treat within 3% of square as square
-BLUR_RADIUS = 40         # gaussian blur radius for the background
-BG_SATURATION = 1.1      # slightly boost saturation on the blurred bg
-FOREGROUND_SCALE = 0.88  # foreground takes up 88% of the canvas
+# ---------------------------------------------------------------------------
+# Defaults
+# ---------------------------------------------------------------------------
+BLUR_RADIUS = 40
+BG_BRIGHTNESS = 0.6      # darken blurred bg to 60%
+FOREGROUND_SCALE = 0.88   # foreground occupies 88% of the canvas
+
+# ---------------------------------------------------------------------------
+# Per-game overrides
+#
+# Keys are the slug (filename without extension).  Supported fields:
+#   bg_color:   hex color string — use a solid color instead of blur
+#   fg_scale:   override FOREGROUND_SCALE for this game
+#   bg_brightness: override BG_BRIGHTNESS
+#   blur_radius:   override BLUR_RADIUS
+# ---------------------------------------------------------------------------
+GAME_CONFIG = {
+    "petiquette": {
+        "bg_color": "#c9c6e0",
+    },
+}
 
 
-def center_crop_square(img: Image.Image, size: int) -> Image.Image:
+# ---------------------------------------------------------------------------
+# Compositing
+# ---------------------------------------------------------------------------
+
+def make_blur_background(img: Image.Image, size: int, cfg: dict) -> Image.Image:
+    """Scale source to fill square, crop, blur, darken."""
     w, h = img.size
-    side = min(w, h)
-    left = (w - side) // 2
-    top = (h - side) // 2
-    cropped = img.crop((left, top, left + side, top + side))
-    return cropped.resize((size, size), Image.LANCZOS)
-
-
-def blur_background_square(img: Image.Image, size: int) -> Image.Image:
-    w, h = img.size
-
-    # --- Background: scale source to fill the square, then blur ---
     scale = size / min(w, h)
     bg_w, bg_h = int(w * scale), int(h * scale)
     bg = img.resize((bg_w, bg_h), Image.LANCZOS)
 
-    # Center-crop the scaled bg to exact square
     left = (bg_w - size) // 2
     top = (bg_h - size) // 2
     bg = bg.crop((left, top, left + size, top + size))
 
-    # Heavy gaussian blur
-    bg = bg.filter(ImageFilter.GaussianBlur(radius=BLUR_RADIUS))
+    radius = cfg.get("blur_radius", BLUR_RADIUS)
+    bg = bg.filter(ImageFilter.GaussianBlur(radius=radius))
 
-    # Darken slightly so the foreground pops
-    from PIL import ImageEnhance
-    bg = ImageEnhance.Brightness(bg).enhance(0.6)
-
-    # --- Foreground: scale to fit within the canvas with margin ---
-    fg_max = int(size * FOREGROUND_SCALE)
-    fg_scale = fg_max / max(w, h)
-    fg_w, fg_h = int(w * fg_scale), int(h * fg_scale)
-    fg = img.resize((fg_w, fg_h), Image.LANCZOS)
-
-    # Paste centered
-    x = (size - fg_w) // 2
-    y = (size - fg_h) // 2
-    bg.paste(fg, (x, y))
+    brightness = cfg.get("bg_brightness", BG_BRIGHTNESS)
+    bg = ImageEnhance.Brightness(bg).enhance(brightness)
 
     return bg
 
+
+def make_solid_background(size: int, color: str) -> Image.Image:
+    """Create a solid-color square canvas."""
+    return Image.new("RGB", (size, size), color)
+
+
+def make_square(img: Image.Image, size: int, cfg: dict) -> Image.Image:
+    w, h = img.size
+
+    # --- Background ---
+    bg_color = cfg.get("bg_color")
+    if bg_color:
+        canvas = make_solid_background(size, bg_color)
+    else:
+        canvas = make_blur_background(img, size, cfg)
+
+    # --- Foreground ---
+    fg_scale = cfg.get("fg_scale", FOREGROUND_SCALE)
+    fg_max = int(size * fg_scale)
+    scale = fg_max / max(w, h)
+    fg_w, fg_h = int(w * scale), int(h * scale)
+    fg = img.resize((fg_w, fg_h), Image.LANCZOS)
+
+    x = (size - fg_w) // 2
+    y = (size - fg_h) // 2
+    canvas.paste(fg, (x, y))
+
+    return canvas
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
 
 def main():
     if len(sys.argv) != 4:
@@ -68,12 +97,12 @@ def main():
 
     input_path, output_path, size = sys.argv[1], sys.argv[2], int(sys.argv[3])
 
+    import os
+    slug = os.path.splitext(os.path.basename(input_path))[0]
+    cfg = GAME_CONFIG.get(slug, {})
+
     img = Image.open(input_path).convert("RGB")
-    w, h = img.size
-    aspect = w / h
-
-    result = blur_background_square(img, size)
-
+    result = make_square(img, size, cfg)
     result.save(output_path, "PNG")
 
 
