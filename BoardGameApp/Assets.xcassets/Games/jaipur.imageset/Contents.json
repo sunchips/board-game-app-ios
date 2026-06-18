@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "image.png",
+      "filename" : "jaipur.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "jaipur@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "jaipur@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

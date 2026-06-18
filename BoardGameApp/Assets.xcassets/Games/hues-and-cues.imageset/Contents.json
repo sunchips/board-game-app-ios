@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "image.png",
+      "filename" : "hues-and-cues.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "hues-and-cues@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "hues-and-cues@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

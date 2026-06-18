@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "image.png",
+      "filename" : "hanabi.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "hanabi@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "hanabi@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

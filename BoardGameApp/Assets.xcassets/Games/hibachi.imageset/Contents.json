@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "image.png",
+      "filename" : "hibachi.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "hibachi@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "hibachi@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

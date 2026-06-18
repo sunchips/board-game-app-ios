@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "image.png",
+      "filename" : "bunny-kingdom.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "bunny-kingdom@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "bunny-kingdom@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "image.png",
+      "filename" : "catan.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "catan@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "catan@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

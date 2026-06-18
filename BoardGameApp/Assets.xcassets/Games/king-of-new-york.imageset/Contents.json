@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "image.png",
+      "filename" : "king-of-new-york.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "king-of-new-york@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "king-of-new-york@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

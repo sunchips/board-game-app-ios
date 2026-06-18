@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "image.png",
+      "filename" : "viticulture.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "viticulture@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "viticulture@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
