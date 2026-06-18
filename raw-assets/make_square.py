@@ -115,6 +115,9 @@ def main():
 
     img = Image.open(input_path)
     if img.mode == "RGBA":
+        bbox = img.getbbox()
+        if bbox:
+            img = img.crop(bbox)
         bg_fill = _dominant_color(img)
         flat = Image.new("RGB", img.size, bg_fill)
         flat.paste(img, mask=img.split()[3])
