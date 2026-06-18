@@ -67,6 +67,14 @@ final class CreateRecordViewModel {
         }
     }
 
+    var isPristine: Bool {
+        players.isEmpty &&
+            notes.isEmpty &&
+            winnerIndexes.isEmpty &&
+            selectedVariants.isEmpty &&
+            editingID == nil
+    }
+
     var canSubmit: Bool {
         !isSubmitting &&
             players.count >= 1 &&

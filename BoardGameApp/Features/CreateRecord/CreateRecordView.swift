@@ -184,9 +184,15 @@ struct CreateRecordView: View {
         .sheet(isPresented: $showingAchievements, onDismiss: { dismiss() }) {
             AchievementsRevealView(earnedAchievements: earnedAchievements)
         }
+        .onDisappear {
+            if !isEditing, model.isPristine {
+                draftStore.discard(slug: game.slug)
+            }
+        }
         .confirmationDialog("Reset this draft?", isPresented: $showingResetConfirm, titleVisibility: .visible) {
             Button("Reset", role: .destructive) {
                 draftStore.discard(slug: game.slug)
+                dismiss()
             }
         } message: {
             Text("All entered data for this game will be cleared.")
