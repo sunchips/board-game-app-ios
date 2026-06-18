@@ -26,11 +26,23 @@ FOREGROUND_SCALE = 0.88   # foreground occupies 88% of the canvas
 #   bg_brightness: override BG_BRIGHTNESS
 #   blur_radius:   override BLUR_RADIUS
 # ---------------------------------------------------------------------------
-GAME_CONFIG = {
-    "petiquette": {
-        "bg_color": "#c9c6e0",
-    },
-}
+GAME_CONFIG = {}
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _dominant_color(img: Image.Image) -> tuple:
+    """Average color of opaque pixels in an RGBA image."""
+    pixels = list(img.get_flattened_data())
+    opaque = [(r, g, b) for r, g, b, a in pixels if a > 128]
+    if not opaque:
+        return (255, 255, 255)
+    n = len(opaque)
+    return (sum(r for r, _, _ in opaque) // n,
+            sum(g for _, g, _ in opaque) // n,
+            sum(b for _, _, b in opaque) // n)
 
 
 # ---------------------------------------------------------------------------
@@ -101,7 +113,14 @@ def main():
     slug = os.path.splitext(os.path.basename(input_path))[0]
     cfg = GAME_CONFIG.get(slug, {})
 
-    img = Image.open(input_path).convert("RGB")
+    img = Image.open(input_path)
+    if img.mode == "RGBA":
+        bg_fill = _dominant_color(img)
+        flat = Image.new("RGB", img.size, bg_fill)
+        flat.paste(img, mask=img.split()[3])
+        img = flat
+    else:
+        img = img.convert("RGB")
     result = make_square(img, size, cfg)
     result.save(output_path, "PNG")
 
