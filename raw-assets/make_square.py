@@ -72,10 +72,7 @@ def main():
     w, h = img.size
     aspect = w / h
 
-    if abs(aspect - 1.0) < ASPECT_TOLERANCE:
-        result = center_crop_square(img, size)
-    else:
-        result = blur_background_square(img, size)
+    result = blur_background_square(img, size)
 
     result.save(output_path, "PNG")
 
